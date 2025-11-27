@@ -202,7 +202,7 @@ export default function OrganizationsPage() {
                     Edit
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="danger"
                     size="small"
                     onClick={() => org.id && handleDelete(org.id, org.name)}
                     aria-label={`Delete ${org.name}`}

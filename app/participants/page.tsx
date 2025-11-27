@@ -35,6 +35,8 @@ export default function ParticipantsPage() {
     startDate: '',
     endDate: '',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   /**
    * Load data on mount
@@ -188,6 +190,27 @@ export default function ParticipantsPage() {
     filters.startDate || 
     filters.endDate;
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredParticipants.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentParticipants = filteredParticipants.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filters, itemsPerPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
+  };
+
   return (
     <DashboardLayout>
       <div className={styles.container}>
@@ -303,39 +326,108 @@ export default function ParticipantsPage() {
             </p>
           </Card>
         ) : (
-          <div className={styles.list}>
-            <div className={styles.listHeader}>
-              <div>Name</div>
-              <div>Organization</div>
-              <div>Mobile</div>
-              <div>Gender</div>
-              <div>Category</div>
-              <div>Size</div>
-              <div>Date</div>
-              <div>Actions</div>
-            </div>
-            {filteredParticipants.map((participant) => (
-              <div key={participant.id} className={styles.participantCard}>
-                <div className={styles.participantName}>{participant.name}</div>
-                <div className={styles.organization}>{participant.organization}</div>
-                <div className={styles.detail}>{participant.mobileNumber}</div>
-                <div className={styles.detail}>{participant.gender}</div>
-                <div className={styles.detail}>{participant.category}</div>
-                <div className={styles.detail}>{participant.size}</div>
-                <div className={styles.date}>{formatDate(participant.createdAt)}</div>
-                <div className={styles.participantActions}>
-                  <Button
-                    variant="outline"
-                    size="small"
-                    onClick={() => participant.id && handleDelete(participant.id, participant.name)}
-                    aria-label={`Delete ${participant.name}`}
-                  >
-                    Delete
-                  </Button>
-                </div>
+          <>
+            <div className={styles.paginationTop}>
+              <div className={styles.paginationInfo}>
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredParticipants.length)} of {filteredParticipants.length} participants
               </div>
-            ))}
-          </div>
+              <div className={styles.itemsPerPageContainer}>
+                <span className={styles.itemsPerPageLabel}>Show:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                  className={styles.itemsPerPageSelect}
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.list}>
+              <div className={styles.listHeader}>
+                <div>Name</div>
+                <div>Organization</div>
+                <div>Mobile</div>
+                <div>Gender</div>
+                <div>Category</div>
+                <div>Size</div>
+                <div>Date</div>
+                <div>Actions</div>
+              </div>
+              {currentParticipants.map((participant) => (
+                <div key={participant.id} className={styles.participantCard}>
+                  <div className={styles.participantName}>{participant.name}</div>
+                  <div className={styles.organization}>{participant.organization}</div>
+                  <div className={styles.detail}>{participant.mobileNumber}</div>
+                  <div className={styles.detail}>{participant.gender}</div>
+                  <div className={styles.detail}>{participant.category}</div>
+                  <div className={styles.detail}>{participant.size}</div>
+                  <div className={styles.date}>{formatDate(participant.createdAt)}</div>
+                  <div className={styles.participantActions}>
+                    <Button
+                      variant="danger"
+                      size="small"
+                      onClick={() => participant.id && handleDelete(participant.id, participant.name)}
+                      aria-label={`Delete ${participant.name}`}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                
+                <div className={styles.pageNumbers}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      // Show first page, last page, current page and adjacent pages
+                      return page === 1 || 
+                             page === totalPages || 
+                             Math.abs(page - currentPage) <= 1;
+                    })
+                    .map((page, index, array) => {
+                      // Add ellipsis if there's a gap
+                      const prevPage = array[index - 1];
+                      const showEllipsis = prevPage && page - prevPage > 1;
+                      
+                      return (
+                        <React.Fragment key={page}>
+                          {showEllipsis && <span className={styles.ellipsis}>...</span>}
+                          <button
+                            onClick={() => handlePageChange(page)}
+                            className={`${styles.pageButton} ${page === currentPage ? styles.activePage : ''}`}
+                          >
+                            {page}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+                </div>
+
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </DashboardLayout>

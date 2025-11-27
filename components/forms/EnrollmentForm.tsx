@@ -252,14 +252,13 @@ const EnrollmentForm: React.FC = () => {
           type="submit"
           variant="primary"
           isLoading={isSubmitting}
-          fullWidth
         >
           {isSubmitting ? 'Submitting...' : 'Submit Enrollment'}
         </Button>
         
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           onClick={handleReset}
           disabled={isSubmitting}
         >
