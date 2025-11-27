@@ -117,7 +117,7 @@ event-enrollment/
 - Optimized for small screens first
 
 ### Color Scheme
-- **Primary**: Blue (#3b82f6)
+- **Primary**: Blue (#134e4a)
 - **Background**: Gradient (#667eea to #764ba2)
 - **Text**: Dark slate (#1e293b)
 - **Secondary text**: Gray (#64748b)

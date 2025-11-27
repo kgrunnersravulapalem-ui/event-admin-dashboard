@@ -49,7 +49,7 @@
 
 .searchInput:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #134e4a;
 }
 
 .searchInput::placeholder {
@@ -112,7 +112,7 @@
 
 .dateInput:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #134e4a;
 }
 
 /* Participants List - Table Style */
@@ -179,7 +179,7 @@
 
 .organization {
   font-size: 0.875rem;
-  color: #3b82f6;
+  color: #134e4a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -321,7 +321,7 @@
 
 .itemsPerPageSelect:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #134e4a;
 }
 
 /* Pagination */
@@ -364,13 +364,20 @@
 }
 
 .pageButton.activePage {
-  background: #1e293b;
+  background: #134e4a;
   color: white;
-  border-color: #1e293b;
+  border-color: #134e4a;
 }
 
 .ellipsis {
   padding: 0 0.25rem;
   color: #94a3b8;
   font-weight: 500;
+}
+
+/* Edit Form */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }

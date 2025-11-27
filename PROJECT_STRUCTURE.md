@@ -181,7 +181,7 @@ pnpm lint
 
 ### Colors
 
-- **Primary**: `#3b82f6` (Blue)
+- **Primary**: `#134e4a` (Blue)
 - **Secondary**: `#f1f5f9` (Light Gray)
 - **Success**: `#10b981` (Green)
 - **Error**: `#ef4444` (Red)

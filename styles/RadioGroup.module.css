@@ -108,14 +108,14 @@
 
 /* Checked state */
 .radioInput:checked ~ .radioLabel {
-  border-color: #3b82f6;
+  border-color: #134e4a;
   background-color: #eff6ff;
   color: #1e40af;
 }
 
 .radioInput:checked ~ .radioLabel .radioButton {
-  border-color: #3b82f6;
-  background-color: #3b82f6;
+  border-color: #134e4a;
+  background-color: #134e4a;
 }
 
 .radioInput:checked ~ .radioLabel .radioButton::after {
@@ -124,7 +124,7 @@
 
 /* Focus state for accessibility */
 .radioInput:focus-visible ~ .radioLabel {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #134e4a;
   outline-offset: 2px;
 }
 

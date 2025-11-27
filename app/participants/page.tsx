@@ -8,11 +8,12 @@
 
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Button, Card, Dropdown } from '@/components/ui';
+import { Button, Card, Dropdown, DatePicker, Modal, Input, RadioGroup } from '@/components/ui';
 import { Participant, Organization } from '@/types';
 import { 
   getAllParticipants, 
   deleteParticipant,
+  updateParticipant,
   exportParticipantsToCSV,
   downloadCSV,
 } from '@/lib/participantsService';
@@ -37,6 +38,16 @@ export default function ParticipantsPage() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
+  const [editFormData, setEditFormData] = useState<Omit<Participant, 'id' | 'createdAt' | 'updatedAt'>>({
+    name: '',
+    organization: '',
+    gender: 'Male',
+    mobileNumber: '',
+    category: '3K',
+    size: '',
+  });
 
   /**
    * Load data on mount
@@ -121,6 +132,51 @@ export default function ParticipantsPage() {
     }
 
     setFilteredParticipants(filtered);
+  };
+
+  /**
+   * Handle edit participant
+   */
+  const handleEdit = (participant: Participant) => {
+    setEditingParticipant(participant);
+    setEditFormData({
+      name: participant.name,
+      organization: participant.organization,
+      gender: participant.gender,
+      mobileNumber: participant.mobileNumber,
+      category: participant.category,
+      size: participant.size,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  /**
+   * Handle form input change
+   */
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  /**
+   * Handle update participant
+   */
+  const handleUpdate = async () => {
+    if (!editingParticipant?.id) return;
+
+    try {
+      await updateParticipant(editingParticipant.id, editFormData);
+      toast.success('Participant updated successfully');
+      setIsEditModalOpen(false);
+      setEditingParticipant(null);
+      loadData();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to update participant';
+      toast.error(message);
+    }
   };
 
   /**
@@ -283,32 +339,24 @@ export default function ParticipantsPage() {
             </div>
 
             <div className={styles.filterItem}>
-              <label htmlFor="startDate" className={styles.filterLabel}>
-                From Date
-              </label>
-              <input
-                id="startDate"
-                type="date"
+              <DatePicker
+                label="From Date"
+                name="startDate"
                 value={filters.startDate}
                 onChange={(e) =>
                   setFilters({ ...filters, startDate: e.target.value })
                 }
-                className={styles.dateInput}
               />
             </div>
 
             <div className={styles.filterItem}>
-              <label htmlFor="endDate" className={styles.filterLabel}>
-                To Date
-              </label>
-              <input
-                id="endDate"
-                type="date"
+              <DatePicker
+                label="To Date"
+                name="endDate"
                 value={filters.endDate}
                 onChange={(e) =>
                   setFilters({ ...filters, endDate: e.target.value })
                 }
-                className={styles.dateInput}
               />
             </div>
           </div>
@@ -366,6 +414,14 @@ export default function ParticipantsPage() {
                   <div className={styles.detail}>{participant.size}</div>
                   <div className={styles.date}>{formatDate(participant.createdAt)}</div>
                   <div className={styles.participantActions}>
+                    <Button
+                      variant="secondary"
+                      size="small"
+                      onClick={() => handleEdit(participant)}
+                      aria-label={`Edit ${participant.name}`}
+                    >
+                      Edit
+                    </Button>
                     <Button
                       variant="danger"
                       size="small"
@@ -430,6 +486,99 @@ export default function ParticipantsPage() {
           </>
         )}
       </div>
+
+      {/* Edit Participant Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Participant"
+        size="medium"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleUpdate}>
+              Update
+            </Button>
+          </>
+        }
+      >
+        <div className={styles.editForm}>
+          <Input
+            label="Name"
+            name="name"
+            value={editFormData.name}
+            onChange={handleEditInputChange}
+            required
+          />
+          
+          <Dropdown
+            label="Organization"
+            name="organization"
+            options={organizations.map((org) => ({
+              value: org.name,
+              label: org.name,
+            }))}
+            value={editFormData.organization}
+            onChange={handleEditInputChange}
+            required
+          />
+
+          <RadioGroup
+            label="Gender"
+            name="gender"
+            options={[
+              { value: 'Male', label: 'Male' },
+              { value: 'Female', label: 'Female' },
+              { value: 'Other', label: 'Other' },
+            ]}
+            value={editFormData.gender}
+            onChange={handleEditInputChange}
+            direction="horizontal"
+            required
+          />
+          
+          <Input
+            label="Mobile Number"
+            name="mobileNumber"
+            type="tel"
+            value={editFormData.mobileNumber}
+            onChange={handleEditInputChange}
+            required
+          />
+
+          <RadioGroup
+            label="Category"
+            name="category"
+            options={[
+              { value: '3K', label: '3K' },
+              { value: '5K', label: '5K' },
+              { value: '10K', label: '10K' },
+            ]}
+            value={editFormData.category}
+            onChange={handleEditInputChange}
+            direction="horizontal"
+            required
+          />
+          
+          <Dropdown
+            label="T-Shirt Size"
+            name="size"
+            options={[
+              { value: 'XS', label: 'XS' },
+              { value: 'S', label: 'S' },
+              { value: 'M', label: 'M' },
+              { value: 'L', label: 'L' },
+              { value: 'XL', label: 'XL' },
+              { value: 'XXL', label: 'XXL' },
+            ]}
+            value={editFormData.size}
+            onChange={handleEditInputChange}
+            required
+          />
+        </div>
+      </Modal>
     </DashboardLayout>
   );
 }

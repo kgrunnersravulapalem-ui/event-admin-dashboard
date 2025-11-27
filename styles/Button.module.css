@@ -21,7 +21,7 @@
 }
 
 .button:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #134e4a;
   outline-offset: 2px;
 }
 
@@ -30,18 +30,18 @@
   cursor: not-allowed;
 }
 
-/* Primary variant - Blue solid background */
+/* Primary variant - Modern teal solid background */
 .primary {
-  background: #1e293b;
+  background: #134e4a;
   color: white;
 }
 
 .primary:hover:not(:disabled) {
-  background: #0f172a;
+  background: #0d9488;
 }
 
 .primary:active:not(:disabled) {
-  background: #020617;
+  background: #0f766e;
 }
 
 /* Secondary variant - Gray solid background */
