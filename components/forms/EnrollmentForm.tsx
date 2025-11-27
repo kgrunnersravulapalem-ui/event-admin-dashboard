@@ -195,9 +195,12 @@ const EnrollmentForm: React.FC = () => {
       
       // Show success toast
       toast.success('Enrollment successful! 🎉', {
-        duration: 4000,
+        duration: 1000,
         position: 'top-center',
       });
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       
       // Reset form but keep organization
       handleReset(true);
