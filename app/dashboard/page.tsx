@@ -1,0 +1,210 @@
+/**
+ * Dashboard Home Page
+ * 
+ * Shows overview statistics and quick actions.
+ */
+
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Card } from '@/components/ui';
+import { getAllParticipants } from '@/lib/participantsService';
+import { getAllOrganizations } from '@/lib/organizationsService';
+import styles from '@/styles/Dashboard.module.css';
+
+export default function DashboardPage() {
+  const [stats, setStats] = useState({
+    totalParticipants: 0,
+    totalOrganizations: 0,
+    category3K: 0,
+    category5K: 0,
+    category10K: 0,
+    todayEnrollments: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const [participants, organizations] = await Promise.all([
+        getAllParticipants(),
+        getAllOrganizations(),
+      ]);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const todayCount = participants.filter((p) => {
+        if (!p.createdAt) return false;
+        const pDate = new Date(p.createdAt);
+        pDate.setHours(0, 0, 0, 0);
+        return pDate.getTime() === today.getTime();
+      }).length;
+
+      setStats({
+        totalParticipants: participants.length,
+        totalOrganizations: organizations.length,
+        category3K: participants.filter((p) => p.category === '3K').length,
+        category5K: participants.filter((p) => p.category === '5K').length,
+        category10K: participants.filter((p) => p.category === '10K').length,
+        todayEnrollments: todayCount,
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className={styles.dashboard}>
+        <h1 className={styles.title}>Dashboard</h1>
+
+        {/* Quick Actions */}
+        <div className={styles.quickActions}>
+          <Link href="/enroll" className={styles.actionButton}>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>New Enrollment</span>
+          </Link>
+        </div>
+
+        {/* Statistics Grid */}
+        <div className={styles.statsGrid}>
+          <Card className={styles.statCard}>
+            <div className={styles.statIcon} style={{ background: '#eff6ff' }}>
+              <svg fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statValue}>{isLoading ? '...' : stats.totalParticipants}</div>
+              <div className={styles.statLabel}>Total Participants</div>
+            </div>
+          </Card>
+
+          <Card className={styles.statCard}>
+            <div className={styles.statIcon} style={{ background: '#f0fdf4' }}>
+              <svg fill="none" stroke="#22c55e" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statValue}>{isLoading ? '...' : stats.todayEnrollments}</div>
+              <div className={styles.statLabel}>Today's Enrollments</div>
+            </div>
+          </Card>
+
+          <Card className={styles.statCard}>
+            <div className={styles.statIcon} style={{ background: '#fef3c7' }}>
+              <svg fill="none" stroke="#f59e0b" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statValue}>{isLoading ? '...' : stats.totalOrganizations}</div>
+              <div className={styles.statLabel}>Organizations</div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Category Breakdown */}
+        <h2 className={styles.sectionTitle}>Category Breakdown</h2>
+        <div className={styles.categoryGrid}>
+          <Card className={styles.categoryCard}>
+            <div className={styles.categoryHeader}>
+              <span className={styles.categoryName}>3K Run</span>
+              <span className={styles.categoryCount}>{isLoading ? '...' : stats.category3K}</span>
+            </div>
+            {!isLoading && stats.totalParticipants > 0 && (
+              <div className={styles.progressBar}>
+                <div 
+                  className={styles.progressFill}
+                  style={{ 
+                    width: `${(stats.category3K / stats.totalParticipants) * 100}%`,
+                    background: '#3b82f6'
+                  }}
+                />
+              </div>
+            )}
+          </Card>
+
+          <Card className={styles.categoryCard}>
+            <div className={styles.categoryHeader}>
+              <span className={styles.categoryName}>5K Run</span>
+              <span className={styles.categoryCount}>{isLoading ? '...' : stats.category5K}</span>
+            </div>
+            {!isLoading && stats.totalParticipants > 0 && (
+              <div className={styles.progressBar}>
+                <div 
+                  className={styles.progressFill}
+                  style={{ 
+                    width: `${(stats.category5K / stats.totalParticipants) * 100}%`,
+                    background: '#22c55e'
+                  }}
+                />
+              </div>
+            )}
+          </Card>
+
+          <Card className={styles.categoryCard}>
+            <div className={styles.categoryHeader}>
+              <span className={styles.categoryName}>10K Run</span>
+              <span className={styles.categoryCount}>{isLoading ? '...' : stats.category10K}</span>
+            </div>
+            {!isLoading && stats.totalParticipants > 0 && (
+              <div className={styles.progressBar}>
+                <div 
+                  className={styles.progressFill}
+                  style={{ 
+                    width: `${(stats.category10K / stats.totalParticipants) * 100}%`,
+                    background: '#f59e0b'
+                  }}
+                />
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Quick Links */}
+        <h2 className={styles.sectionTitle}>Quick Links</h2>
+        <div className={styles.linksGrid}>
+          <Link href="/participants" className={styles.linkCard}>
+            <Card>
+              <div className={styles.linkContent}>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <div>
+                  <div className={styles.linkTitle}>View Participants</div>
+                  <div className={styles.linkDesc}>Manage all enrollments</div>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/organizations" className={styles.linkCard}>
+            <Card>
+              <div className={styles.linkContent}>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <div>
+                  <div className={styles.linkTitle}>Manage Organizations</div>
+                  <div className={styles.linkDesc}>Add or edit organizations</div>
+                </div>
+              </div>
+            </Card>
+          </Link>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}

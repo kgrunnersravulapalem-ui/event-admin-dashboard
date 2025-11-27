@@ -12,7 +12,7 @@
 
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Button, Input, Dropdown } from '@/components/ui';
+import { Button, Input, Dropdown, RadioGroup } from '@/components/ui';
 import { addParticipant, validateParticipant } from '@/lib/firestoreService';
 import { Participant } from '@/types';
 import styles from '@/styles/EnrollmentForm.module.css';
@@ -179,13 +179,14 @@ const EnrollmentForm: React.FC = () => {
         />
 
         {/* Gender */}
-        <Dropdown
+        <RadioGroup
           label="Gender"
           name="gender"
           options={GENDER_OPTIONS}
           value={formData.gender}
           onChange={handleChange}
           error={errors.gender}
+          direction="horizontal"
           required
         />
 
@@ -203,13 +204,14 @@ const EnrollmentForm: React.FC = () => {
         />
 
         {/* Category */}
-        <Dropdown
+        <RadioGroup
           label="Race Category"
           name="category"
           options={CATEGORY_OPTIONS}
           value={formData.category}
           onChange={handleChange}
           error={errors.category}
+          direction="horizontal"
           required
         />
 

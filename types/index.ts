@@ -14,6 +14,7 @@ export interface Participant {
   category: '3K' | '5K' | '10K';
   size: string;
   createdAt?: Date;
+  updatedAt?: Date;
 }
 
 /**
@@ -23,3 +24,6 @@ export interface OrganizationOption {
   value: string;
   label: string;
 }
+
+// Re-export organization types
+export type { Organization } from './organization';

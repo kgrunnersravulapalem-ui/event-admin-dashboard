@@ -13,5 +13,8 @@ export type { InputProps } from './Input';
 export { default as Dropdown } from './Dropdown';
 export type { DropdownProps, DropdownOption } from './Dropdown';
 
+export { default as RadioGroup } from './RadioGroup';
+export type { RadioGroupProps, RadioOption } from './RadioGroup';
+
 export { default as Card } from './Card';
 export type { CardProps } from './Card';
