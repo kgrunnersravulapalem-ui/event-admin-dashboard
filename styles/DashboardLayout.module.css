@@ -12,14 +12,13 @@
 
 /* Header/Navigation */
 .header {
-  background: #1e293b;
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
   color: white;
   padding: 0.5rem 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid #334155;
 }
 
 .headerContent {
@@ -47,8 +46,8 @@
 /* Mobile Navigation */
 .mobileMenuButton {
   display: flex;
-  background: #334155;
-  border: 1px solid #475569;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.25rem;
   padding: 0.5rem;
   cursor: pointer;
@@ -133,9 +132,9 @@
 }
 
 .navLinkActive {
-  background: #eff6ff;
-  color: #134e4a;
-  border-left: 4px solid #134e4a;
+  background: #f0fdfa;
+  color: #0f766e;
+  border-left: 4px solid #0f766e;
 }
 
 /* Main Content */
@@ -216,14 +215,25 @@
 
 /* Footer */
 .footer {
-  background: white;
-  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
   padding: 1rem;
   text-align: center;
-  color: #64748b;
+  color: white;
   font-size: 0.875rem;
 }
 
 .footer p {
   margin: 0;
+  font-weight: 500;
+}
+
+.footerBrand {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.footerCopyright {
+  opacity: 0.9;
+  font-size: 0.75rem;
 }

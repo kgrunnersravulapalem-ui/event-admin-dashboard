@@ -180,7 +180,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        <p>© 2025 Event Enrollment. All rights reserved.</p>
+        <p className={styles.footerBrand}>🏃 Tanuku Road Run 2025</p>
+        <p className={styles.footerCopyright}>© 2025 All rights reserved.</p>
       </footer>
     </div>
   );

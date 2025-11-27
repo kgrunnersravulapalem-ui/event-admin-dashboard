@@ -279,28 +279,8 @@ export default function ParticipantsPage() {
           </Button>
         </div>
 
-        {/* Search Bar */}
-        <div className={styles.searchBar}>
-          <input
-            type="text"
-            placeholder="Search by name or mobile number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-
         {/* Filters */}
         <div className={styles.filtersCard}>
-          <div className={styles.filtersHeader}>
-            <span className={styles.filtersTitle}>FILTERS</span>
-            {hasActiveFilters && (
-              <Button variant="danger" onClick={clearFilters}>
-                Clear All
-              </Button>
-            )}
-          </div>
-
           <div className={styles.filtersGrid}>
             <div className={styles.filterItem}>
               <Dropdown
@@ -356,7 +336,26 @@ export default function ParticipantsPage() {
                 }
               />
             </div>
+
+            {hasActiveFilters && (
+              <div className={styles.filterItem}>
+                <Button variant="danger" onClick={clearFilters}>
+                  Clear Filters
+                </Button>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className={styles.searchBar}>
+          <input
+            type="text"
+            placeholder="Search by name or mobile number..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={styles.searchInput}
+          />
         </div>
 
         {/* Participants List */}
