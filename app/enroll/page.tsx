@@ -21,9 +21,6 @@ export default function EnrollPage() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>New Enrollment</h1>
-          <p className={styles.subtitle}>
-            Register a participant for Tanuku Road Run 2025
-          </p>
         </div>
 
         <Card className={styles.formCard}>

@@ -273,9 +273,6 @@ export default function ParticipantsPage() {
         <div className={styles.header}>
           <div>
             <h1 className={styles.title}>Participants</h1>
-            <p className={styles.subtitle}>
-              {filteredParticipants.length} of {participants.length} enrolled
-            </p>
           </div>
           <Button onClick={handleExport} disabled={filteredParticipants.length === 0}>
             Export CSV

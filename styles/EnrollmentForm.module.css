@@ -31,12 +31,13 @@
   gap: 1rem;
   align-items: start;
   width: 100%;
+  grid-column: 1 / -1;
 }
 
 @media (min-width: 768px) {
   .rowGroup {
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 1.5rem;
   }
 }
 

@@ -132,9 +132,6 @@ export default function OrganizationsPage() {
         <div className={styles.header}>
           <div>
             <h1 className={styles.title}>Organizations</h1>
-            <p className={styles.subtitle}>
-              Manage participating organizations
-            </p>
           </div>
           {!showForm && (
             <Button onClick={() => setShowForm(true)}>
