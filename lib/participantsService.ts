@@ -24,6 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Participant } from '@/types';
+import { incrementParticipantStats, decrementParticipantStats } from './statsService';
 
 const COLLECTION_NAME = 'participants';
 
@@ -48,6 +49,9 @@ export const addParticipant = async (
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    
+    // Update stats
+    await incrementParticipantStats(participant.category);
     
     return docRef.id;
   } catch (error) {
@@ -81,8 +85,19 @@ export const updateParticipant = async (
  */
 export const deleteParticipant = async (id: string): Promise<void> => {
   try {
+    // Get participant to know category before deleting
     const participantDoc = doc(db, COLLECTION_NAME, id);
-    await deleteDoc(participantDoc);
+    const snapshot = await getDoc(participantDoc);
+    
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      await deleteDoc(participantDoc);
+      
+      // Update stats
+      await decrementParticipantStats(data.category);
+    } else {
+      throw new Error('Participant not found');
+    }
   } catch (error) {
     console.error('Error deleting participant:', error);
     throw new Error('Failed to delete participant. Please try again.');

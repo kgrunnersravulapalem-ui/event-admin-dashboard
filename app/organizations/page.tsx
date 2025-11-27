@@ -133,7 +133,7 @@ export default function OrganizationsPage() {
           <div>
             <h1 className={styles.title}>Organizations</h1>
             <p className={styles.subtitle}>
-              Manage event organizations
+              Manage participating organizations
             </p>
           </div>
           {!showForm && (
@@ -183,29 +183,32 @@ export default function OrganizationsPage() {
           </Card>
         ) : (
           <div className={styles.grid}>
+            <div className={styles.listHeader}>
+              <div>Name</div>
+              <div>Code</div>
+              <div>Actions</div>
+            </div>
             {organizations.map((org) => (
-              <Card key={org.id} className={styles.orgCard}>
-                <div className={styles.orgInfo}>
-                  <h3 className={styles.orgName}>{org.name}</h3>
-                  <p className={styles.orgCode}>{org.code}</p>
-                </div>
+              <div key={org.id} className={styles.orgCard}>
+                <div className={styles.orgName}>{org.name}</div>
+                <div className={styles.orgCode}>{org.code}</div>
                 <div className={styles.orgActions}>
                   <button
                     onClick={() => handleEdit(org)}
                     className={styles.editButton}
                     aria-label={`Edit ${org.name}`}
                   >
-                    ✏️ Edit
+                    Edit
                   </button>
                   <button
                     onClick={() => org.id && handleDelete(org.id, org.name)}
                     className={styles.deleteButton}
                     aria-label={`Delete ${org.name}`}
                   >
-                    🗑️ Delete
+                    Delete
                   </button>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         )}

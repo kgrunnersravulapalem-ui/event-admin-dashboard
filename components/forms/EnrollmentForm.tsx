@@ -10,24 +10,13 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Button, Input, Dropdown, RadioGroup } from '@/components/ui';
 import { addParticipant, validateParticipant } from '@/lib/firestoreService';
-import { Participant } from '@/types';
+import { getAllOrganizations } from '@/lib/organizationsService';
+import { Participant, Organization } from '@/types';
 import styles from '@/styles/EnrollmentForm.module.css';
-
-/**
- * Organization options for dropdown
- */
-const ORGANIZATIONS = [
-  { value: 'TCS', label: 'Tata Consultancy Services' },
-  { value: 'Infosys', label: 'Infosys' },
-  { value: 'Wipro', label: 'Wipro' },
-  { value: 'HCL', label: 'HCL Technologies' },
-  { value: 'TechMahindra', label: 'Tech Mahindra' },
-  { value: 'Other', label: 'Other' },
-];
 
 /**
  * Gender options
@@ -78,6 +67,27 @@ const EnrollmentForm: React.FC = () => {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(true);
+
+  /**
+   * Load organizations on mount
+   */
+  useEffect(() => {
+    loadOrganizations();
+  }, []);
+
+  const loadOrganizations = async () => {
+    try {
+      const orgs = await getAllOrganizations();
+      setOrganizations(orgs);
+    } catch (error) {
+      console.error('Error loading organizations:', error);
+      toast.error('Failed to load organizations');
+    } finally {
+      setLoadingOrgs(false);
+    }
+  };
 
   /**
    * Handle input change
@@ -157,12 +167,19 @@ const EnrollmentForm: React.FC = () => {
         <Dropdown
           label="Organization"
           name="organization"
-          options={ORGANIZATIONS}
+          options={[
+            { value: '', label: loadingOrgs ? 'Loading...' : 'Select your organization' },
+            ...organizations.map((org) => ({
+              value: org.name,
+              label: org.name,
+            })),
+          ]}
           placeholder="Select your organization"
           value={formData.organization}
           onChange={handleChange}
           error={errors.organization}
           required
+          disabled={loadingOrgs}
         />
 
         {/* Name */}

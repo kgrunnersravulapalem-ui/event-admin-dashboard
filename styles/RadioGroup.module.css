@@ -26,11 +26,12 @@
 
 .optionsContainer {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
-/* Horizontal layout for larger screens */
+/* Horizontal layout for all screen sizes */
 .horizontal .optionsContainer {
   flex-direction: row;
   flex-wrap: wrap;

@@ -6,58 +6,33 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui';
-import { getAllParticipants } from '@/lib/participantsService';
-import { getAllOrganizations } from '@/lib/organizationsService';
+import Link from 'next/link';
+import { getEventStats, EventStats } from '@/lib/statsService';
 import styles from '@/styles/Dashboard.module.css';
 
+/**
+ * Dashboard page component
+ */
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
-    totalParticipants: 0,
-    totalOrganizations: 0,
-    category3K: 0,
-    category5K: 0,
-    category10K: 0,
-    todayEnrollments: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<EventStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
+    loadData();
   }, []);
 
-  const loadStats = async () => {
+  const loadData = async () => {
     try {
-      const [participants, organizations] = await Promise.all([
-        getAllParticipants(),
-        getAllOrganizations(),
-      ]);
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const todayCount = participants.filter((p) => {
-        if (!p.createdAt) return false;
-        const pDate = new Date(p.createdAt);
-        pDate.setHours(0, 0, 0, 0);
-        return pDate.getTime() === today.getTime();
-      }).length;
-
-      setStats({
-        totalParticipants: participants.length,
-        totalOrganizations: organizations.length,
-        category3K: participants.filter((p) => p.category === '3K').length,
-        category5K: participants.filter((p) => p.category === '5K').length,
-        category10K: participants.filter((p) => p.category === '10K').length,
-        todayEnrollments: todayCount,
-      });
+      setLoading(true);
+      const eventStats = await getEventStats();
+      setStats(eventStats);
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error('Error loading dashboard data:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -85,20 +60,8 @@ export default function DashboardPage() {
               </svg>
             </div>
             <div className={styles.statContent}>
-              <div className={styles.statValue}>{isLoading ? '...' : stats.totalParticipants}</div>
+              <div className={styles.statValue}>{loading ? '...' : stats?.totalParticipants || 0}</div>
               <div className={styles.statLabel}>Total Participants</div>
-            </div>
-          </Card>
-
-          <Card className={styles.statCard}>
-            <div className={styles.statIcon} style={{ background: '#f0fdf4' }}>
-              <svg fill="none" stroke="#22c55e" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statValue}>{isLoading ? '...' : stats.todayEnrollments}</div>
-              <div className={styles.statLabel}>Today's Enrollments</div>
             </div>
           </Card>
 
@@ -109,7 +72,7 @@ export default function DashboardPage() {
               </svg>
             </div>
             <div className={styles.statContent}>
-              <div className={styles.statValue}>{isLoading ? '...' : stats.totalOrganizations}</div>
+              <div className={styles.statValue}>{loading ? '...' : stats?.totalOrganizations || 0}</div>
               <div className={styles.statLabel}>Organizations</div>
             </div>
           </Card>
@@ -121,9 +84,9 @@ export default function DashboardPage() {
           <Card className={styles.categoryCard}>
             <div className={styles.categoryHeader}>
               <span className={styles.categoryName}>3K Run</span>
-              <span className={styles.categoryCount}>{isLoading ? '...' : stats.category3K}</span>
+              <span className={styles.categoryCount}>{loading ? '...' : stats?.category3K || 0}</span>
             </div>
-            {!isLoading && stats.totalParticipants > 0 && (
+            {!loading && stats && stats.totalParticipants > 0 && (
               <div className={styles.progressBar}>
                 <div 
                   className={styles.progressFill}
@@ -139,9 +102,9 @@ export default function DashboardPage() {
           <Card className={styles.categoryCard}>
             <div className={styles.categoryHeader}>
               <span className={styles.categoryName}>5K Run</span>
-              <span className={styles.categoryCount}>{isLoading ? '...' : stats.category5K}</span>
+              <span className={styles.categoryCount}>{loading ? '...' : stats?.category5K || 0}</span>
             </div>
-            {!isLoading && stats.totalParticipants > 0 && (
+            {!loading && stats && stats.totalParticipants > 0 && (
               <div className={styles.progressBar}>
                 <div 
                   className={styles.progressFill}
@@ -157,9 +120,9 @@ export default function DashboardPage() {
           <Card className={styles.categoryCard}>
             <div className={styles.categoryHeader}>
               <span className={styles.categoryName}>10K Run</span>
-              <span className={styles.categoryCount}>{isLoading ? '...' : stats.category10K}</span>
+              <span className={styles.categoryCount}>{loading ? '...' : stats?.category10K || 0}</span>
             </div>
-            {!isLoading && stats.totalParticipants > 0 && (
+            {!loading && stats && stats.totalParticipants > 0 && (
               <div className={styles.progressBar}>
                 <div 
                   className={styles.progressFill}

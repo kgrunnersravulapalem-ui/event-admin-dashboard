@@ -195,7 +195,7 @@ export default function ParticipantsPage() {
           <div>
             <h1 className={styles.title}>Participants</h1>
             <p className={styles.subtitle}>
-              {filteredParticipants.length} of {participants.length} participants
+              {filteredParticipants.length} of {participants.length} enrolled
             </p>
           </div>
           <Button onClick={handleExport} disabled={filteredParticipants.length === 0}>
@@ -307,45 +307,35 @@ export default function ParticipantsPage() {
           </Card>
         ) : (
           <div className={styles.list}>
+            <div className={styles.listHeader}>
+              <div>Name</div>
+              <div>Organization</div>
+              <div>Mobile</div>
+              <div>Gender</div>
+              <div>Category</div>
+              <div>Size</div>
+              <div>Date</div>
+              <div>Actions</div>
+            </div>
             {filteredParticipants.map((participant) => (
-              <Card key={participant.id} className={styles.participantCard}>
-                <div className={styles.participantMain}>
-                  <div className={styles.participantInfo}>
-                    <h3 className={styles.participantName}>{participant.name}</h3>
-                    <div className={styles.participantDetails}>
-                      <span className={styles.detail}>
-                        📱 {participant.mobileNumber}
-                      </span>
-                      <span className={styles.detail}>
-                        👤 {participant.gender}
-                      </span>
-                      <span className={styles.detail}>
-                        🏃 {participant.category}
-                      </span>
-                      <span className={styles.detail}>
-                        👕 {participant.size}
-                      </span>
-                    </div>
-                    <div className={styles.participantMeta}>
-                      <span className={styles.organization}>
-                        {participant.organization}
-                      </span>
-                      <span className={styles.date}>
-                        {formatDate(participant.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+              <div key={participant.id} className={styles.participantCard}>
+                <div className={styles.participantName}>{participant.name}</div>
+                <div className={styles.organization}>{participant.organization}</div>
+                <div className={styles.detail}>{participant.mobileNumber}</div>
+                <div className={styles.detail}>{participant.gender}</div>
+                <div className={styles.detail}>{participant.category}</div>
+                <div className={styles.detail}>{participant.size}</div>
+                <div className={styles.date}>{formatDate(participant.createdAt)}</div>
                 <div className={styles.participantActions}>
                   <button
                     onClick={() => participant.id && handleDelete(participant.id, participant.name)}
                     className={styles.deleteButton}
                     aria-label={`Delete ${participant.name}`}
                   >
-                    🗑️ Delete
+                    Delete
                   </button>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         )}

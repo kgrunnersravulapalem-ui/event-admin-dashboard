@@ -100,7 +100,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 strokeLinejoin="round"
               />
             </svg>
-            <span>Event Enrollment</span>
+            <span>Tanuku Road Run 2025</span>
           </div>
 
           {/* Desktop Navigation */}
