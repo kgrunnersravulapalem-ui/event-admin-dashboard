@@ -32,7 +32,7 @@
 .select {
   width: 100%;
   padding: 0.5rem 2rem 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  font-size: 1rem; /* 16px prevents iOS zoom */
   border: 1px solid var(--theme-border);
   border-radius: var(--border-radius-md);
   background-color: var(--theme-bg-primary);
@@ -42,8 +42,9 @@
   line-height: 1.5;
   outline: none;
   cursor: pointer;
+  -webkit-appearance: none;
   appearance: none;
-  height: 36px;
+  height: 40px;
 }
 
 .select:hover:not(:disabled) {

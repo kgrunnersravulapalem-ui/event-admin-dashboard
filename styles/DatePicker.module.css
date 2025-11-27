@@ -9,9 +9,10 @@
   width: 100%;
 }
 
+
 .label {
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #475569;
   margin-bottom: 0;
 }
@@ -35,7 +36,7 @@
   color: #1e293b;
   background: white;
   transition: border-color 0.15s, box-shadow 0.15s;
-  height: 34px;
+  height: 40px;
   font-family: inherit;
 }
 
