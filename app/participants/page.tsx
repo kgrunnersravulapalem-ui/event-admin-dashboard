@@ -205,18 +205,33 @@ export default function ParticipantsPage() {
   };
 
   /**
-   * Handle delete participant
+   * Handle delete participant (optimistic update)
    */
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete participant "${name}"?`)) {
       return;
     }
 
+    // Store current state for rollback
+    const previousParticipants = [...participants];
+    const previousTotalCount = totalCount;
+
+    // Optimistic update - remove from UI immediately
+    setParticipants(prev => prev.filter(p => p.id !== id));
+    setTotalCount(prev => prev - 1);
+
     try {
       await deleteParticipant(id);
       toast.success('Participant deleted successfully');
-      loadParticipants();
+      
+      // If current page is now empty and not on first page, go to previous page
+      if (participants.length === 1 && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
+      }
     } catch (error: unknown) {
+      // Rollback on error
+      setParticipants(previousParticipants);
+      setTotalCount(previousTotalCount);
       const message = error instanceof Error ? error.message : 'Failed to delete participant';
       toast.error(message);
     }
