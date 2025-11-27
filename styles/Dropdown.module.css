@@ -1,0 +1,114 @@
+/**
+ * Dropdown/Select component styles
+ * Follows minimal and modern design principles
+ */
+
+.selectWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.selectContainer {
+  position: relative;
+  width: 100%;
+}
+
+.select {
+  width: 100%;
+  padding: 0.875rem 2.5rem 0.875rem 1rem;
+  font-size: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  color: #1e293b;
+  transition: all 0.2s ease-in-out;
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.select:hover:not(:disabled) {
+  border-color: #cbd5e1;
+}
+
+.select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.select:disabled {
+  background-color: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.select option {
+  padding: 0.5rem;
+}
+
+/* Custom arrow */
+.arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64748b;
+  transition: transform 0.2s ease-in-out;
+}
+
+.select:focus ~ .arrow {
+  color: #3b82f6;
+}
+
+/* Error state */
+.error .select {
+  border-color: #ef4444;
+}
+
+.error .select:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.errorMessage {
+  font-size: 0.875rem;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Helper text */
+.helperText {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Sizes */
+.small .select {
+  padding: 0.625rem 2.25rem 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.large .select {
+  padding: 1rem 2.75rem 1rem 1.25rem;
+  font-size: 1.125rem;
+}

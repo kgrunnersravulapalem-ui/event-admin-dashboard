@@ -1,65 +1,113 @@
-import Image from "next/image";
+/**
+ * Home Page - Event Enrollment Application
+ * 
+ * Main landing page with enrollment form.
+ * Implements client-side rendering for form interactivity.
+ */
 
+'use client';
+
+import React from 'react';
+import { Toaster } from 'react-hot-toast';
+import EnrollmentForm from '@/components/forms/EnrollmentForm';
+import { Card } from '@/components/ui';
+import styles from '@/styles/Home.module.css';
+
+/**
+ * Home page component
+ */
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      {/* Toast notifications container */}
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#ffffff',
+            color: '#1e293b',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            fontSize: '14px',
+            fontWeight: 500,
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#ffffff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#ffffff',
+            },
+          },
+        }}
+      />
+
+      <div className={styles.container}>
+        <div className={styles.content}>
+          {/* Header */}
+          <header className={styles.header}>
+            <div className={styles.logoContainer}>
+              <div className={styles.logo}>
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M16 4L4 10L16 16L28 10L16 4Z"
+                    fill="#3b82f6"
+                    opacity="0.8"
+                  />
+                  <path
+                    d="M4 16L16 22L28 16"
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4 22L16 28L28 22"
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <h1 className={styles.title}>Event Enrollment</h1>
+            </div>
+            <p className={styles.subtitle}>
+              Register for our upcoming marathon event
+            </p>
+          </header>
+
+          {/* Form Card */}
+          <Card className={styles.card}>
+            <div className={styles.formHeader}>
+              <h2 className={styles.formTitle}>Participant Registration</h2>
+              <p className={styles.formDescription}>
+                Please fill in your details to complete your enrollment
+              </p>
+            </div>
+            
+            <EnrollmentForm />
+          </Card>
+
+          {/* Footer */}
+          <footer className={styles.footer}>
+            <p>© 2025 Event Enrollment. All rights reserved.</p>
+          </footer>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
