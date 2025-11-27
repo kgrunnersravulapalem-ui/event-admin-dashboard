@@ -29,13 +29,13 @@
 .input {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 3px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
   font-size: 0.875rem;
   color: #1e293b;
   background: white;
   transition: border-color 0.15s, box-shadow 0.15s;
-  height: 36px;
+  height: 34px;
   font-family: inherit;
 }
 

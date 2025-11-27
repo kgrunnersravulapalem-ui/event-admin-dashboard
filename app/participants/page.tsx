@@ -277,7 +277,7 @@ export default function ParticipantsPage() {
               {filteredParticipants.length} of {participants.length} enrolled
             </p>
           </div>
-          <Button onClick={handleExport} disabled={filteredParticipants.length === 0} size="small">
+          <Button onClick={handleExport} disabled={filteredParticipants.length === 0}>
             Export CSV
           </Button>
         </div>
@@ -298,7 +298,7 @@ export default function ParticipantsPage() {
           <div className={styles.filtersHeader}>
             <span className={styles.filtersTitle}>FILTERS</span>
             {hasActiveFilters && (
-              <Button variant="outline" size="small" onClick={clearFilters}>
+              <Button variant="danger" onClick={clearFilters}>
                 Clear All
               </Button>
             )}
