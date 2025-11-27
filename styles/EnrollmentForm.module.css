@@ -25,6 +25,20 @@
   grid-column: 1 / -1;
 }
 
+.rowGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .rowGroup {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
 .buttonGroup {
   display: flex;
   gap: 1rem;

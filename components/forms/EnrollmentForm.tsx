@@ -195,17 +195,30 @@ const EnrollmentForm: React.FC = () => {
           autoComplete="name"
         />
 
-        {/* Gender */}
-        <RadioGroup
-          label="Gender"
-          name="gender"
-          options={GENDER_OPTIONS}
-          value={formData.gender}
-          onChange={handleChange}
-          error={errors.gender}
-          direction="horizontal"
-          required
-        />
+        {/* Gender and Category Row */}
+        <div className={styles.rowGroup}>
+          <RadioGroup
+            label="Gender"
+            name="gender"
+            options={GENDER_OPTIONS}
+            value={formData.gender}
+            onChange={handleChange}
+            error={errors.gender}
+            direction="horizontal"
+            required
+          />
+
+          <RadioGroup
+            label="Race Category"
+            name="category"
+            options={CATEGORY_OPTIONS}
+            value={formData.category}
+            onChange={handleChange}
+            error={errors.category}
+            direction="horizontal"
+            required
+          />
+        </div>
 
         {/* Mobile Number */}
         <Input
@@ -218,18 +231,6 @@ const EnrollmentForm: React.FC = () => {
           error={errors.mobileNumber}
           required
           autoComplete="tel"
-        />
-
-        {/* Category */}
-        <RadioGroup
-          label="Race Category"
-          name="category"
-          options={CATEGORY_OPTIONS}
-          value={formData.category}
-          onChange={handleChange}
-          error={errors.category}
-          direction="horizontal"
-          required
         />
 
         {/* Size */}

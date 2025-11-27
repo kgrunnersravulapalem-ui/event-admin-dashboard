@@ -193,20 +193,22 @@ export default function OrganizationsPage() {
                 <div className={styles.orgName}>{org.name}</div>
                 <div className={styles.orgCode}>{org.code}</div>
                 <div className={styles.orgActions}>
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="small"
                     onClick={() => handleEdit(org)}
-                    className={styles.editButton}
                     aria-label={`Edit ${org.name}`}
                   >
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="small"
                     onClick={() => org.id && handleDelete(org.id, org.name)}
-                    className={styles.deleteButton}
                     aria-label={`Delete ${org.name}`}
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}

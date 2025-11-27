@@ -198,37 +198,34 @@ export default function ParticipantsPage() {
               {filteredParticipants.length} of {participants.length} enrolled
             </p>
           </div>
-          <Button onClick={handleExport} disabled={filteredParticipants.length === 0}>
-            📥 Export CSV
+          <Button onClick={handleExport} disabled={filteredParticipants.length === 0} size="small">
+            Export CSV
           </Button>
         </div>
 
+        {/* Search Bar */}
+        <div className={styles.searchBar}>
+          <input
+            type="text"
+            placeholder="Search by name or mobile number..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
+
         {/* Filters */}
-        <Card className={styles.filtersCard}>
+        <div className={styles.filtersCard}>
           <div className={styles.filtersHeader}>
-            <h2 className={styles.filtersTitle}>Filters</h2>
+            <span className={styles.filtersTitle}>FILTERS</span>
             {hasActiveFilters && (
-              <button onClick={clearFilters} className={styles.clearButton}>
+              <Button variant="outline" size="small" onClick={clearFilters}>
                 Clear All
-              </button>
+              </Button>
             )}
           </div>
 
           <div className={styles.filtersGrid}>
-            <div className={styles.filterItem}>
-              <label htmlFor="search" className={styles.filterLabel}>
-                Search
-              </label>
-              <input
-                id="search"
-                type="text"
-                placeholder="Name or mobile..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={styles.searchInput}
-              />
-            </div>
-
             <div className={styles.filterItem}>
               <Dropdown
                 label="Organization"
@@ -292,7 +289,7 @@ export default function ParticipantsPage() {
               />
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Participants List */}
         {loading ? (
@@ -327,13 +324,14 @@ export default function ParticipantsPage() {
                 <div className={styles.detail}>{participant.size}</div>
                 <div className={styles.date}>{formatDate(participant.createdAt)}</div>
                 <div className={styles.participantActions}>
-                  <button
+                  <Button
+                    variant="outline"
+                    size="small"
                     onClick={() => participant.id && handleDelete(participant.id, participant.name)}
-                    className={styles.deleteButton}
                     aria-label={`Delete ${participant.name}`}
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
