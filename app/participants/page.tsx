@@ -1,21 +1,24 @@
 /**
  * Participants Management Page
  * 
- * View, filter, and export participant data
+ * View, filter, and export participant data with server-side pagination
  */
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button, Card, Dropdown, DatePicker, Modal, Input, RadioGroup } from '@/components/ui';
 import { Participant, Organization } from '@/types';
 import { 
+  getPaginatedParticipants,
   getAllParticipants, 
   deleteParticipant,
   updateParticipant,
   exportParticipantsToCSV,
   downloadCSV,
+  subscribeToParticipantCount,
+  ParticipantFilters,
 } from '@/lib/participantsService';
 import { getAllOrganizations } from '@/lib/organizationsService';
 import { toast } from 'react-hot-toast';
@@ -26,18 +29,31 @@ import styles from '@/styles/Participants.module.css';
  */
 export default function ParticipantsPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [filteredParticipants, setFilteredParticipants] = useState<Participant[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
+  
+  // Pending filters (user is selecting but not yet applied)
+  const [pendingFilters, setPendingFilters] = useState({
     organization: '',
     category: '',
     startDate: '',
     endDate: '',
   });
+  const [pendingSearchTerm, setPendingSearchTerm] = useState('');
+  
+  // Applied filters (actually used for fetching data)
+  const [appliedFilters, setAppliedFilters] = useState({
+    organization: '',
+    category: '',
+    startDate: '',
+    endDate: '',
+  });
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
   const [editFormData, setEditFormData] = useState<Omit<Participant, 'id' | 'createdAt' | 'updatedAt'>>({
@@ -48,90 +64,99 @@ export default function ParticipantsPage() {
     category: '3K',
     size: '',
   });
+  const [isExporting, setIsExporting] = useState(false);
 
   /**
-   * Load data on mount
+   * Build filters object for API call (uses applied filters only)
+   */
+  const buildFilters = useCallback((): ParticipantFilters => {
+    const apiFilters: ParticipantFilters = {};
+    
+    if (appliedFilters.organization) {
+      apiFilters.organization = appliedFilters.organization;
+    }
+    if (appliedFilters.category) {
+      apiFilters.category = appliedFilters.category;
+    }
+    if (appliedFilters.startDate) {
+      apiFilters.startDate = new Date(appliedFilters.startDate);
+    }
+    if (appliedFilters.endDate) {
+      apiFilters.endDate = new Date(appliedFilters.endDate);
+    }
+    if (appliedSearchTerm) {
+      apiFilters.searchTerm = appliedSearchTerm;
+    }
+    
+    return apiFilters;
+  }, [appliedFilters, appliedSearchTerm]);
+
+  /**
+   * Load organizations on mount
    */
   useEffect(() => {
-    loadData();
+    const loadOrganizations = async () => {
+      try {
+        const orgsData = await getAllOrganizations();
+        setOrganizations(orgsData);
+      } catch (error) {
+        toast.error('Failed to load organizations');
+        console.error(error);
+      }
+    };
+    loadOrganizations();
   }, []);
 
   /**
-   * Apply filters when data or filters change
+   * Subscribe to real-time participant count updates
+   * This will trigger a reload when new participants are added
    */
   useEffect(() => {
-    applyFilters();
-  }, [participants, searchTerm, filters]);
+    const unsubscribe = subscribeToParticipantCount(
+      (newCount) => {
+        // If count changed and we're on page 1 with no filters, reload
+        if (newCount !== totalCount) {
+          loadParticipants();
+        }
+      },
+      (error) => {
+        console.error('Real-time subscription error:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [totalCount, appliedFilters, appliedSearchTerm, currentPage, itemsPerPage]);
 
   /**
-   * Load participants and organizations
+   * Load participants when applied filters or pagination changes
    */
-  const loadData = async () => {
+  useEffect(() => {
+    loadParticipants();
+  }, [currentPage, itemsPerPage, appliedFilters, appliedSearchTerm]);
+
+  /**
+   * Load participants with pagination
+   */
+  const loadParticipants = async () => {
     try {
       setLoading(true);
-      const [participantsData, orgsData] = await Promise.all([
-        getAllParticipants(),
-        getAllOrganizations(),
-      ]);
-      setParticipants(participantsData);
-      setOrganizations(orgsData);
+      const apiFilters = buildFilters();
+      
+      const result = await getPaginatedParticipants(
+        apiFilters,
+        currentPage,
+        itemsPerPage
+      );
+      
+      setParticipants(result.participants);
+      setTotalCount(result.totalCount);
+      setTotalPages(result.totalPages);
     } catch (error) {
-      toast.error('Failed to load data');
+      toast.error('Failed to load participants');
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
-
-  /**
-   * Apply search and filters
-   */
-  const applyFilters = () => {
-    let filtered = [...participants];
-
-    // Search by name or mobile
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          p.mobileNumber.includes(term)
-      );
-    }
-
-    // Filter by organization
-    if (filters.organization) {
-      filtered = filtered.filter((p) => p.organization === filters.organization);
-    }
-
-    // Filter by category
-    if (filters.category) {
-      filtered = filtered.filter((p) => p.category === filters.category);
-    }
-
-    // Filter by date range
-    if (filters.startDate) {
-      const startDate = new Date(filters.startDate);
-      startDate.setHours(0, 0, 0, 0);
-      filtered = filtered.filter((p) => {
-        if (!p.createdAt) return false;
-        const enrollDate = new Date(p.createdAt);
-        enrollDate.setHours(0, 0, 0, 0);
-        return enrollDate >= startDate;
-      });
-    }
-
-    if (filters.endDate) {
-      const endDate = new Date(filters.endDate);
-      endDate.setHours(23, 59, 59, 999);
-      filtered = filtered.filter((p) => {
-        if (!p.createdAt) return false;
-        const enrollDate = new Date(p.createdAt);
-        return enrollDate <= endDate;
-      });
-    }
-
-    setFilteredParticipants(filtered);
   };
 
   /**
@@ -172,7 +197,7 @@ export default function ParticipantsPage() {
       toast.success('Participant updated successfully');
       setIsEditModalOpen(false);
       setEditingParticipant(null);
-      loadData();
+      loadParticipants();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to update participant';
       toast.error(message);
@@ -190,7 +215,7 @@ export default function ParticipantsPage() {
     try {
       await deleteParticipant(id);
       toast.success('Participant deleted successfully');
-      loadData();
+      loadParticipants();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to delete participant';
       toast.error(message);
@@ -198,17 +223,48 @@ export default function ParticipantsPage() {
   };
 
   /**
-   * Handle export to CSV
+   * Handle export to CSV - fetches all matching participants
    */
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      const csvContent = exportParticipantsToCSV(filteredParticipants);
+      setIsExporting(true);
+      const apiFilters = buildFilters();
+      const allParticipants = await getAllParticipants(apiFilters);
+      const csvContent = exportParticipantsToCSV(allParticipants);
       const filename = `participants_${new Date().toISOString().split('T')[0]}.csv`;
       downloadCSV(csvContent, filename);
-      toast.success('Export successful');
+      toast.success(`Exported ${allParticipants.length} participants`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Export failed';
       toast.error(message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  /**
+   * Apply filters - copies pending filters to applied filters
+   */
+  const applyFilters = () => {
+    setAppliedFilters({ ...pendingFilters });
+    setAppliedSearchTerm(pendingSearchTerm);
+    setCurrentPage(1);
+  };
+
+  /**
+   * Handle search - applies search term
+   */
+  const handleSearch = () => {
+    setAppliedSearchTerm(pendingSearchTerm);
+    setCurrentPage(1);
+  };
+
+  /**
+   * Handle search on Enter key
+   */
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
     }
   };
 
@@ -216,13 +272,21 @@ export default function ParticipantsPage() {
    * Clear all filters
    */
   const clearFilters = () => {
-    setSearchTerm('');
-    setFilters({
+    setPendingSearchTerm('');
+    setPendingFilters({
       organization: '',
       category: '',
       startDate: '',
       endDate: '',
     });
+    setAppliedSearchTerm('');
+    setAppliedFilters({
+      organization: '',
+      category: '',
+      startDate: '',
+      endDate: '',
+    });
+    setCurrentPage(1);
   };
 
   /**
@@ -239,23 +303,25 @@ export default function ParticipantsPage() {
     });
   };
 
-  const hasActiveFilters = 
-    searchTerm || 
-    filters.organization || 
-    filters.category || 
-    filters.startDate || 
-    filters.endDate;
+  // Check if there are any applied filters
+  const hasAppliedFilters = 
+    appliedSearchTerm || 
+    appliedFilters.organization || 
+    appliedFilters.category || 
+    appliedFilters.startDate || 
+    appliedFilters.endDate;
+
+  // Check if pending filters differ from applied (show apply button)
+  const hasPendingChanges = 
+    pendingSearchTerm !== appliedSearchTerm ||
+    pendingFilters.organization !== appliedFilters.organization ||
+    pendingFilters.category !== appliedFilters.category ||
+    pendingFilters.startDate !== appliedFilters.startDate ||
+    pendingFilters.endDate !== appliedFilters.endDate;
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredParticipants.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentParticipants = filteredParticipants.slice(startIndex, endIndex);
-
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filters, itemsPerPage]);
+  const endIndex = Math.min(startIndex + participants.length, totalCount);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -274,8 +340,23 @@ export default function ParticipantsPage() {
           <div>
             <h1 className={styles.title}>Participants</h1>
           </div>
-          <Button onClick={handleExport} disabled={filteredParticipants.length === 0}>
-            Export CSV
+          <Button onClick={handleExport} disabled={totalCount === 0 || isExporting}>
+            {isExporting ? 'Exporting...' : 'Export CSV'}
+          </Button>
+        </div>
+
+        {/* Search Bar */}
+        <div className={styles.searchBar}>
+          <input
+            type="text"
+            placeholder="Search by name or mobile number..."
+            value={pendingSearchTerm}
+            onChange={(e) => setPendingSearchTerm(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            className={styles.searchInput}
+          />
+          <Button onClick={handleSearch}>
+            Search
           </Button>
         </div>
 
@@ -292,9 +373,9 @@ export default function ParticipantsPage() {
                     label: org.name,
                   })),
                 ]}
-                value={filters.organization}
+                value={pendingFilters.organization}
                 onChange={(e) =>
-                  setFilters({ ...filters, organization: e.target.value })
+                  setPendingFilters({ ...pendingFilters, organization: e.target.value })
                 }
               />
             </div>
@@ -308,9 +389,9 @@ export default function ParticipantsPage() {
                   { value: '5K', label: '5K' },
                   { value: '10K', label: '10K' },
                 ]}
-                value={filters.category}
+                value={pendingFilters.category}
                 onChange={(e) =>
-                  setFilters({ ...filters, category: e.target.value })
+                  setPendingFilters({ ...pendingFilters, category: e.target.value })
                 }
               />
             </div>
@@ -319,9 +400,9 @@ export default function ParticipantsPage() {
               <DatePicker
                 label="From Date"
                 name="startDate"
-                value={filters.startDate}
+                value={pendingFilters.startDate}
                 onChange={(e) =>
-                  setFilters({ ...filters, startDate: e.target.value })
+                  setPendingFilters({ ...pendingFilters, startDate: e.target.value })
                 }
               />
             </div>
@@ -330,41 +411,36 @@ export default function ParticipantsPage() {
               <DatePicker
                 label="To Date"
                 name="endDate"
-                value={filters.endDate}
+                value={pendingFilters.endDate}
                 onChange={(e) =>
-                  setFilters({ ...filters, endDate: e.target.value })
+                  setPendingFilters({ ...pendingFilters, endDate: e.target.value })
                 }
               />
             </div>
 
-            {hasActiveFilters && (
+            <div className={styles.filterItem}>
+              <Button onClick={applyFilters}>
+                Apply Filters
+              </Button>
+            </div>
+
+            {(hasAppliedFilters || hasPendingChanges) && (
               <div className={styles.filterItem}>
                 <Button variant="danger" onClick={clearFilters}>
-                  Clear Filters
+                  Clear All
                 </Button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className={styles.searchBar}>
-          <input
-            type="text"
-            placeholder="Search by name or mobile number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-
         {/* Participants List */}
         {loading ? (
           <div className={styles.loading}>Loading participants...</div>
-        ) : filteredParticipants.length === 0 ? (
+        ) : totalCount === 0 ? (
           <Card className={styles.emptyState}>
             <p>
-              {hasActiveFilters
+              {hasAppliedFilters
                 ? 'No participants match your filters.'
                 : 'No participants enrolled yet.'}
             </p>
@@ -373,7 +449,7 @@ export default function ParticipantsPage() {
           <>
             <div className={styles.paginationTop}>
               <div className={styles.paginationInfo}>
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredParticipants.length)} of {filteredParticipants.length} participants
+                Showing {startIndex + 1} to {endIndex} of {totalCount} participants
               </div>
               <div className={styles.itemsPerPageContainer}>
                 <span className={styles.itemsPerPageLabel}>Show:</span>
@@ -400,7 +476,7 @@ export default function ParticipantsPage() {
                 <div>Date</div>
                 <div>Actions</div>
               </div>
-              {currentParticipants.map((participant) => (
+              {participants.map((participant: Participant) => (
                 <div key={participant.id} className={styles.participantCard}>
                   <div className={styles.participantName}>{participant.name}</div>
                   <div className={styles.organization}>{participant.organization}</div>

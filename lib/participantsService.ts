@@ -2,6 +2,7 @@
  * Participants Firestore Service
  * 
  * Handles CRUD operations for participants collection with filtering and export.
+ * Supports real-time updates via Firestore onSnapshot.
  * 
  * @module participantsService
  */
@@ -18,9 +19,13 @@ import {
   query,
   orderBy,
   where,
+  onSnapshot,
   Timestamp,
   CollectionReference,
   DocumentData,
+  QueryDocumentSnapshot,
+  Query,
+  Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Participant } from '@/types';
@@ -110,59 +115,186 @@ export const deleteParticipant = async (id: string): Promise<void> => {
 export interface ParticipantFilters {
   organization?: string;
   category?: string;
+  gender?: string;
   startDate?: Date;
   endDate?: Date;
+  searchTerm?: string;
 }
+
+export interface PaginatedResult {
+  participants: Participant[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+}
+
+/**
+ * Build Firestore query with filters
+ */
+const buildFilteredQuery = (
+  baseRef: CollectionReference<DocumentData>,
+  filters?: ParticipantFilters
+): Query<DocumentData> => {
+  // Firestore has limitations on compound queries
+  // We'll use the most selective filter for the query and apply others client-side
+  
+  // Priority: organization > category > gender (as these are equality filters)
+  if (filters?.organization) {
+    return query(
+      baseRef,
+      where('organization', '==', filters.organization),
+      orderBy('createdAt', 'desc')
+    );
+  }
+  
+  if (filters?.category) {
+    return query(
+      baseRef,
+      where('category', '==', filters.category),
+      orderBy('createdAt', 'desc')
+    );
+  }
+  
+  if (filters?.gender) {
+    return query(
+      baseRef,
+      where('gender', '==', filters.gender),
+      orderBy('createdAt', 'desc')
+    );
+  }
+  
+  return query(baseRef, orderBy('createdAt', 'desc'));
+};
+
+/**
+ * Apply client-side filters that couldn't be applied in Firestore query
+ */
+const applyClientSideFilters = (
+  participants: Participant[],
+  filters?: ParticipantFilters,
+  appliedFilter?: 'organization' | 'category' | 'gender'
+): Participant[] => {
+  let result = [...participants];
+  
+  // Apply category filter if not already applied
+  if (filters?.category && appliedFilter !== 'category') {
+    result = result.filter(p => p.category === filters.category);
+  }
+  
+  // Apply organization filter if not already applied
+  if (filters?.organization && appliedFilter !== 'organization') {
+    result = result.filter(p => p.organization === filters.organization);
+  }
+  
+  // Apply gender filter if not already applied
+  if (filters?.gender && appliedFilter !== 'gender') {
+    result = result.filter(p => p.gender === filters.gender);
+  }
+  
+  // Apply date range filters
+  if (filters?.startDate) {
+    const startDate = new Date(filters.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    result = result.filter(p => {
+      if (!p.createdAt) return false;
+      const enrollDate = new Date(p.createdAt);
+      enrollDate.setHours(0, 0, 0, 0);
+      return enrollDate >= startDate;
+    });
+  }
+  
+  if (filters?.endDate) {
+    const endDate = new Date(filters.endDate);
+    endDate.setHours(23, 59, 59, 999);
+    result = result.filter(p => {
+      if (!p.createdAt) return false;
+      return new Date(p.createdAt) <= endDate;
+    });
+  }
+  
+  // Apply search term filter
+  if (filters?.searchTerm) {
+    const term = filters.searchTerm.toLowerCase();
+    result = result.filter(p =>
+      p.name.toLowerCase().includes(term) ||
+      p.mobileNumber.includes(term)
+    );
+  }
+  
+  return result;
+};
+
+/**
+ * Get paginated participants with filters
+ * Uses offset-based pagination for better UX with arbitrary page navigation
+ */
+export const getPaginatedParticipants = async (
+  filters?: ParticipantFilters,
+  page: number = 1,
+  pageSize: number = 25
+): Promise<PaginatedResult> => {
+  try {
+    // Get all filtered participants first
+    const allParticipants = await getAllParticipants(filters);
+    const totalCount = allParticipants.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    // Calculate offset
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    
+    // Slice for current page
+    const participants = allParticipants.slice(startIndex, endIndex);
+    
+    return {
+      participants,
+      totalCount,
+      currentPage: page,
+      totalPages,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated participants:', error);
+    throw new Error('Failed to fetch participants. Please try again.');
+  }
+};
+
+/**
+ * Convert Firestore document to Participant
+ */
+const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    organization: data.organization,
+    name: data.name,
+    gender: data.gender,
+    mobileNumber: data.mobileNumber,
+    category: data.category,
+    size: data.size,
+    createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
+    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
+  };
+};
 
 export const getAllParticipants = async (
   filters?: ParticipantFilters
 ): Promise<Participant[]> => {
   try {
     const participantsRef = getParticipantsCollection();
-    let q = query(participantsRef, orderBy('createdAt', 'desc'));
     
-    // Apply filters
-    if (filters?.organization) {
-      q = query(participantsRef, where('organization', '==', filters.organization), orderBy('createdAt', 'desc'));
-    }
+    // Determine which filter to apply at Firestore level
+    let appliedFilter: 'organization' | 'category' | 'gender' | undefined;
+    if (filters?.organization) appliedFilter = 'organization';
+    else if (filters?.category) appliedFilter = 'category';
+    else if (filters?.gender) appliedFilter = 'gender';
     
+    const q = buildFilteredQuery(participantsRef, filters);
     const querySnapshot = await getDocs(q);
     
-    let participants = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        organization: data.organization,
-        name: data.name,
-        gender: data.gender,
-        mobileNumber: data.mobileNumber,
-        category: data.category,
-        size: data.size,
-        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
-        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
-      } as Participant;
-    });
+    let participants = querySnapshot.docs.map(doc => docToParticipant(doc));
     
-    // Apply date filters (client-side since Firestore has query limitations)
-    if (filters?.startDate || filters?.endDate) {
-      participants = participants.filter((p) => {
-        if (!p.createdAt) return false;
-        
-        if (filters.startDate && p.createdAt < filters.startDate) return false;
-        if (filters.endDate) {
-          const endOfDay = new Date(filters.endDate);
-          endOfDay.setHours(23, 59, 59, 999);
-          if (p.createdAt > endOfDay) return false;
-        }
-        
-        return true;
-      });
-    }
-    
-    // Apply category filter (client-side)
-    if (filters?.category) {
-      participants = participants.filter((p) => p.category === filters.category);
-    }
+    // Apply client-side filters
+    participants = applyClientSideFilters(participants, filters, appliedFilter);
     
     return participants;
   } catch (error) {
@@ -282,4 +414,53 @@ export const downloadCSV = (csvContent: string, filename: string): void => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
+};
+
+/**
+ * Subscribe to real-time participant updates
+ * Returns an unsubscribe function to stop listening
+ */
+export const subscribeToParticipants = (
+  onUpdate: (participants: Participant[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe => {
+  const participantsRef = getParticipantsCollection();
+  const q = query(participantsRef, orderBy('createdAt', 'desc'));
+  
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const participants = snapshot.docs.map(doc => docToParticipant(doc));
+      onUpdate(participants);
+    },
+    (error) => {
+      console.error('Error in participants subscription:', error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
+};
+
+/**
+ * Subscribe to participant count for real-time stats
+ */
+export const subscribeToParticipantCount = (
+  onUpdate: (count: number) => void,
+  onError?: (error: Error) => void
+): Unsubscribe => {
+  const participantsRef = getParticipantsCollection();
+  
+  return onSnapshot(
+    participantsRef,
+    (snapshot) => {
+      onUpdate(snapshot.size);
+    },
+    (error) => {
+      console.error('Error in participant count subscription:', error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
 };
