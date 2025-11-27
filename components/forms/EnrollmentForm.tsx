@@ -49,6 +49,47 @@ const SIZE_OPTIONS = [
 ];
 
 /**
+ * LocalStorage key for persisted organization
+ */
+const STORAGE_KEY = 'trr_selected_organization';
+const STORAGE_EXPIRY_KEY = 'trr_organization_expiry';
+const EXPIRY_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * Get persisted organization from localStorage
+ */
+const getPersistedOrganization = (): string => {
+  if (typeof window === 'undefined') return '';
+  
+  try {
+    const expiry = localStorage.getItem(STORAGE_EXPIRY_KEY);
+    if (expiry && Date.now() > parseInt(expiry, 10)) {
+      // Expired, clear storage
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_EXPIRY_KEY);
+      return '';
+    }
+    return localStorage.getItem(STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Save organization to localStorage with expiry
+ */
+const persistOrganization = (org: string): void => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, org);
+    localStorage.setItem(STORAGE_EXPIRY_KEY, String(Date.now() + EXPIRY_DURATION_MS));
+  } catch (error) {
+    console.warn('Failed to persist organization:', error);
+  }
+};
+
+/**
  * Initial form state
  */
 const initialFormData: Omit<Participant, 'id' | 'createdAt'> = {
@@ -71,10 +112,16 @@ const EnrollmentForm: React.FC = () => {
   const [loadingOrgs, setLoadingOrgs] = useState(true);
 
   /**
-   * Load organizations on mount
+   * Load organizations and persisted selection on mount
    */
   useEffect(() => {
     loadOrganizations();
+    
+    // Load persisted organization
+    const savedOrg = getPersistedOrganization();
+    if (savedOrg) {
+      setFormData(prev => ({ ...prev, organization: savedOrg }));
+    }
   }, []);
 
   const loadOrganizations = async () => {
@@ -113,10 +160,14 @@ const EnrollmentForm: React.FC = () => {
   };
 
   /**
-   * Handle form reset
+   * Handle form reset - preserves organization
    */
-  const handleReset = () => {
-    setFormData(initialFormData);
+  const handleReset = (preserveOrg: boolean = true) => {
+    const savedOrg = preserveOrg ? formData.organization : '';
+    setFormData({
+      ...initialFormData,
+      organization: savedOrg,
+    });
     setErrors({});
   };
 
@@ -139,14 +190,17 @@ const EnrollmentForm: React.FC = () => {
       // Submit to Firestore
       const participantId = await addParticipant(formData);
       
+      // Persist organization for future enrollments
+      persistOrganization(formData.organization);
+      
       // Show success toast
       toast.success('Enrollment successful! 🎉', {
         duration: 4000,
         position: 'top-center',
       });
       
-      // Reset form
-      handleReset();
+      // Reset form but keep organization
+      handleReset(true);
       
       console.log('Participant enrolled with ID:', participantId);
     } catch (error) {
@@ -259,7 +313,7 @@ const EnrollmentForm: React.FC = () => {
         <Button
           type="button"
           variant="secondary"
-          onClick={handleReset}
+          onClick={() => handleReset(false)}
           disabled={isSubmitting}
         >
           Reset Form
