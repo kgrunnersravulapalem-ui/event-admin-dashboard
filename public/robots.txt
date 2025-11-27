@@ -1,0 +1,12 @@
+# Tanuku Road Run 2025 - Admin Dashboard
+# This is an admin dashboard - not intended for public indexing
+
+User-agent: *
+Disallow: /
+
+# Allow specific assets
+User-agent: *
+Allow: /favicon.svg
+Allow: /apple-touch-icon.svg
+Allow: /manifest.json
+Allow: /icons/
