@@ -13,7 +13,7 @@
 .label {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -21,7 +21,7 @@
 }
 
 .required {
-  color: #ef4444;
+  color: var(--theme-danger);
 }
 
 .optionsContainer {
@@ -61,10 +61,10 @@
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  background-color: #ffffff;
-  color: #475569;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--theme-bg-primary);
+  color: var(--theme-text-secondary);
   font-size: 0.8125rem;
   transition: all 0.15s ease-in-out;
   cursor: pointer;
@@ -81,9 +81,9 @@
 .radioButton {
   width: 16px;
   height: 16px;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--theme-border-dark);
   border-radius: 50%;
-  background-color: #ffffff;
+  background-color: var(--theme-bg-primary);
   transition: all 0.2s ease-in-out;
   flex-shrink: 0;
   position: relative;
@@ -98,27 +98,27 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #ffffff;
+  background-color: var(--theme-bg-primary);
   transition: transform 0.2s ease-in-out;
 }
 
 /* Hover state */
 .radioOption:hover .radioLabel {
-  border-color: #14b8a6;
-  background-color: #f0fdfa;
+  border-color: var(--theme-primary);
+  background-color: var(--theme-primary-light);
 }
 
 /* Checked state */
 .radioInput:checked ~ .radioLabel {
-  border-color: #14b8a6;
-  background-color: #f0fdfa;
-  color: #0f766e;
+  border-color: var(--theme-primary);
+  background-color: var(--theme-primary-light);
+  color: var(--theme-primary-dark);
   font-weight: 500;
 }
 
 .radioInput:checked ~ .radioLabel .radioButton {
-  border-color: #14b8a6;
-  background-color: #14b8a6;
+  border-color: var(--theme-primary);
+  background-color: var(--theme-primary);
 }
 
 .radioInput:checked ~ .radioLabel .radioButton::after {
@@ -127,7 +127,7 @@
 
 /* Focus state for accessibility */
 .radioInput:focus-visible ~ .radioLabel {
-  outline: 2px solid #14b8a6;
+  outline: 2px solid var(--theme-primary);
   outline-offset: 2px;
 }
 

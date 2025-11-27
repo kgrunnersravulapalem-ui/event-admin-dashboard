@@ -5,14 +5,14 @@
 
 .dashboardLayout {
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--theme-bg-secondary);
   display: flex;
   flex-direction: column;
 }
 
 /* Header/Navigation */
 .header {
-  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  background: linear-gradient(135deg, var(--theme-header-start) 0%, var(--theme-header-end) 100%);
   color: white;
   padding: 0.5rem 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -22,7 +22,7 @@
 }
 
 .headerContent {
-  max-width: 1200px;
+  max-width: var(--max-width);
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -215,7 +215,7 @@
 
 /* Footer */
 .footer {
-  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  background: linear-gradient(135deg, var(--theme-header-start) 0%, var(--theme-header-end) 100%);
   padding: 1rem;
   text-align: center;
   color: white;

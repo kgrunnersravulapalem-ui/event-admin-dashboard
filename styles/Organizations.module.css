@@ -4,7 +4,7 @@
 
 .container {
   padding: 0.75rem 1rem;
-  max-width: 1200px;
+  max-width: var(--max-width);
   margin: 0 auto;
 }
 
@@ -15,21 +15,21 @@
   margin-bottom: 0.5rem;
   gap: 0.75rem;
   flex-wrap: wrap;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--theme-border);
   padding-bottom: 0.5rem;
 }
 
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
 .subtitle {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #14b8a6;
+  color: var(--theme-primary);
   margin: 0;
 }
 

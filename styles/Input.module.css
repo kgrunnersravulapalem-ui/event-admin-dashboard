@@ -13,7 +13,7 @@
 .label {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -21,7 +21,7 @@
 }
 
 .required {
-  color: #ef4444;
+  color: var(--theme-danger);
 }
 
 .inputContainer {
@@ -33,10 +33,10 @@
   width: 100%;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background-color: #ffffff;
-  color: #1e293b;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--border-radius-md);
+  background-color: var(--theme-bg-primary);
+  color: var(--theme-text-primary);
   transition: all 0.15s ease-in-out;
   font-family: inherit;
   line-height: 1.5;
@@ -45,37 +45,37 @@
 }
 
 .input::placeholder {
-  color: #94a3b8;
+  color: var(--theme-text-light);
 }
 
 .input:hover:not(:disabled) {
-  border-color: #cbd5e1;
+  border-color: var(--theme-border-dark);
 }
 
 .input:focus {
-  border-color: #134e4a;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--theme-primary-dark);
+  box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb), 0.1);
 }
 
 .input:disabled {
-  background-color: #f8fafc;
-  color: #94a3b8;
+  background-color: var(--theme-bg-secondary);
+  color: var(--theme-text-light);
   cursor: not-allowed;
 }
 
 /* Error state */
 .error .input {
-  border-color: #ef4444;
+  border-color: var(--theme-danger);
 }
 
 .error .input:focus {
-  border-color: #ef4444;
+  border-color: var(--theme-danger);
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .errorMessage {
   font-size: 0.875rem;
-  color: #ef4444;
+  color: var(--theme-danger);
   display: flex;
   align-items: center;
   gap: 0.25rem;

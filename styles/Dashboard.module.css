@@ -10,7 +10,7 @@
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-text-primary);
   margin: 0 0 0.75rem 0;
 }
 
@@ -24,15 +24,15 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-hover) 100%);
   color: white;
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.875rem;
   transition: all 0.2s;
   border: none;
-  box-shadow: 0 2px 4px rgba(20, 184, 166, 0.3);
+  box-shadow: 0 2px 4px rgba(var(--theme-primary-rgb), 0.3);
 }
 
 .actionButton svg {
@@ -41,8 +41,8 @@
 }
 
 .actionButton:hover {
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-  box-shadow: 0 4px 8px rgba(20, 184, 166, 0.4);
+  background: linear-gradient(135deg, var(--theme-primary-hover) 0%, var(--theme-primary-dark) 100%);
+  box-shadow: 0 4px 8px rgba(var(--theme-primary-rgb), 0.4);
   transform: translateY(-1px);
 }
 
@@ -65,9 +65,9 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--theme-bg-primary) 0%, var(--theme-bg-secondary) 100%);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--border-radius-lg);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease;
 }
@@ -80,7 +80,7 @@
 .statIcon {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;

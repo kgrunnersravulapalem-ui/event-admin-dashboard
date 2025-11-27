@@ -6,6 +6,50 @@
 @import "tailwindcss";
 
 :root {
+  /* ============================================
+   * THEME COLORS - Change these to update the entire app
+   * ============================================ */
+  
+  /* Primary brand colors (Teal theme) */
+  --theme-primary: #14b8a6;
+  --theme-primary-hover: #0d9488;
+  --theme-primary-dark: #0f766e;
+  --theme-primary-light: #f0fdfa;
+  --theme-primary-rgb: 20, 184, 166;
+  
+  /* Danger/Error colors */
+  --theme-danger: #ef4444;
+  --theme-danger-hover: #dc2626;
+  --theme-danger-light: #fef2f2;
+  
+  /* Neutral colors */
+  --theme-text-primary: #0f172a;
+  --theme-text-secondary: #475569;
+  --theme-text-muted: #64748b;
+  --theme-text-light: #94a3b8;
+  
+  /* Background colors */
+  --theme-bg-primary: #ffffff;
+  --theme-bg-secondary: #f8fafc;
+  --theme-bg-tertiary: #f1f5f9;
+  
+  /* Border colors */
+  --theme-border: #e2e8f0;
+  --theme-border-dark: #cbd5e1;
+  
+  /* Header/Footer gradient */
+  --theme-header-start: #0f766e;
+  --theme-header-end: #14b8a6;
+  
+  /* ============================================
+   * Layout variables
+   * ============================================ */
+  --max-width: 1200px;
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+  
+  /* Legacy variables for compatibility */
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -49,7 +93,7 @@ html {
 
 /* Focus styles for accessibility */
 :focus-visible {
-  outline: 2px solid #134e4a;
+  outline: 2px solid var(--theme-primary-dark);
   outline-offset: 2px;
 }
 
@@ -72,12 +116,12 @@ input:-webkit-autofill:active {
 
 /* Selection color */
 ::selection {
-  background-color: #134e4a;
+  background-color: var(--theme-primary-dark);
   color: white;
 }
 
 ::-moz-selection {
-  background-color: #134e4a;
+  background-color: var(--theme-primary-dark);
   color: white;
 }
 
@@ -88,14 +132,14 @@ input:-webkit-autofill:active {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--theme-bg-tertiary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--theme-border-dark);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--theme-text-light);
 }

@@ -7,7 +7,7 @@
   padding: 0.5rem 1rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
@@ -22,7 +22,7 @@
 }
 
 .button:focus-visible {
-  outline: 2px solid #134e4a;
+  outline: 2px solid var(--theme-primary-dark);
   outline-offset: 2px;
 }
 
@@ -33,47 +33,47 @@
 
 /* Primary variant - Modern teal solid background */
 .primary {
-  background: #134e4a;
+  background: var(--theme-primary-dark);
   color: white;
 }
 
 .primary:hover:not(:disabled) {
-  background: #0d9488;
+  background: var(--theme-primary-hover);
 }
 
 .primary:active:not(:disabled) {
-  background: #0f766e;
+  background: var(--theme-primary-dark);
 }
 
 /* Secondary variant - Gray solid background */
 .secondary {
-  background-color: #64748b;
+  background-color: var(--theme-text-muted);
   color: white;
 }
 
 .secondary:hover:not(:disabled) {
-  background-color: #475569;
+  background-color: var(--theme-text-secondary);
 }
 
 /* Outline variant - Transparent with border */
 .outline {
-  background-color: #f1f5f9;
-  color: #475569;
-  border: 1px solid #cbd5e1;
+  background-color: var(--theme-bg-tertiary);
+  color: var(--theme-text-secondary);
+  border: 1px solid var(--theme-border-dark);
 }
 
 .outline:hover:not(:disabled) {
-  background-color: #e2e8f0;
+  background-color: var(--theme-border);
 }
 
 /* Danger variant - Red solid background for delete actions */
 .danger {
-  background: #ef4444;
+  background: var(--theme-danger);
   color: white;
 }
 
 .danger:hover:not(:disabled) {
-  background: #dc2626;
+  background: var(--theme-danger-hover);
 }
 
 .danger:active:not(:disabled) {
