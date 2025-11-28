@@ -19,6 +19,9 @@ import {
   downloadCSV,
   subscribeToParticipantCount,
   ParticipantFilters,
+  bulkDeleteParticipants,
+  toggleParticipantStatus,
+  bulkToggleParticipantStatus,
 } from '@/lib/participantsService';
 import { getAllOrganizations } from '@/lib/organizationsService';
 import UploadParticipantsModal from '@/components/modals/UploadParticipantsModal';
@@ -67,6 +70,10 @@ export default function ParticipantsPage() {
   });
   const [isExporting, setIsExporting] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  
+  // Selection state for bulk actions
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   /**
    * Build filters object for API call (uses applied filters only)
@@ -236,6 +243,108 @@ export default function ParticipantsPage() {
       setTotalCount(previousTotalCount);
       const message = error instanceof Error ? error.message : 'Failed to delete participant';
       toast.error(message);
+    }
+  };
+
+  /**
+   * Handle select/deselect a single participant
+   */
+  const handleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  /**
+   * Handle select/deselect all participants on current page
+   */
+  const handleSelectAll = () => {
+    if (selectedIds.size === participants.length) {
+      // Deselect all
+      setSelectedIds(new Set());
+    } else {
+      // Select all on current page
+      const allIds = participants.map(p => p.id!).filter(Boolean);
+      setSelectedIds(new Set(allIds));
+    }
+  };
+
+  /**
+   * Handle bulk delete
+   */
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} participant(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    try {
+      const result = await bulkDeleteParticipants(Array.from(selectedIds));
+      
+      if (result.success > 0) {
+        toast.success(`Deleted ${result.success} participant(s)`);
+      }
+      if (result.failed > 0) {
+        toast.error(`Failed to delete ${result.failed} participant(s)`);
+      }
+      
+      setSelectedIds(new Set());
+      loadParticipants();
+    } catch (error) {
+      toast.error('Bulk delete failed');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  /**
+   * Handle toggle participant enrollment status
+   */
+  const handleToggleStatus = async (participant: Participant) => {
+    if (!participant.id) return;
+    
+    const action = participant.disabled ? 're-enroll' : 'unenroll';
+    
+    try {
+      await toggleParticipantStatus(participant.id, !participant.disabled);
+      toast.success(`Participant ${action}ed successfully`);
+      loadParticipants();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : `Failed to ${action} participant`;
+      toast.error(message);
+    }
+  };
+
+  /**
+   * Handle bulk toggle status
+   */
+  const handleBulkToggleStatus = async (disable: boolean) => {
+    if (selectedIds.size === 0) return;
+    
+    const action = disable ? 'unenroll' : 're-enroll';
+    
+    try {
+      const result = await bulkToggleParticipantStatus(Array.from(selectedIds), disable);
+      
+      if (result.success > 0) {
+        toast.success(`${action === 'unenroll' ? 'Unenrolled' : 'Re-enrolled'} ${result.success} participant(s)`);
+      }
+      if (result.failed > 0) {
+        toast.error(`Failed to ${action} ${result.failed} participant(s)`);
+      }
+      
+      setSelectedIds(new Set());
+      loadParticipants();
+    } catch (error) {
+      toast.error(`Bulk ${action} failed`);
     }
   };
 
@@ -487,27 +596,97 @@ export default function ParticipantsPage() {
               </div>
             </div>
 
+            {/* Bulk Actions Bar */}
+            {selectedIds.size > 0 && (
+              <div className={styles.bulkActions}>
+                <span className={styles.selectedCount}>
+                  {selectedIds.size} selected
+                </span>
+                <Button
+                  variant="outline"
+                  size="small"
+                  onClick={() => handleBulkToggleStatus(true)}
+                >
+                  Unenroll Selected
+                </Button>
+                <Button
+                  variant="outline"
+                  size="small"
+                  onClick={() => handleBulkToggleStatus(false)}
+                >
+                  Re-enroll Selected
+                </Button>
+                <Button
+                  variant="danger"
+                  size="small"
+                  onClick={handleBulkDelete}
+                  disabled={isBulkDeleting}
+                >
+                  {isBulkDeleting ? 'Deleting...' : 'Delete Selected'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  Clear Selection
+                </Button>
+              </div>
+            )}
+
             <div className={styles.list}>
               <div className={styles.listHeader}>
+                <div className={styles.checkboxCell}>
+                  <input
+                    type="checkbox"
+                    checked={participants.length > 0 && selectedIds.size === participants.length}
+                    onChange={handleSelectAll}
+                    className={styles.checkbox}
+                  />
+                </div>
                 <div>Name</div>
                 <div>Organization</div>
                 <div>Mobile</div>
                 <div>Gender</div>
                 <div>Category</div>
                 <div>Size</div>
-                <div>Date</div>
+                <div>Status</div>
                 <div>Actions</div>
               </div>
               {participants.map((participant: Participant) => (
-                <div key={participant.id} className={styles.participantCard}>
+                <div 
+                  key={participant.id} 
+                  className={`${styles.participantCard} ${participant.disabled ? styles.disabledRow : ''}`}
+                >
+                  <div className={styles.checkboxCell}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(participant.id!)}
+                      onChange={() => handleSelect(participant.id!)}
+                      className={styles.checkbox}
+                    />
+                  </div>
                   <div className={styles.participantName}>{participant.name}</div>
                   <div className={styles.organization}>{participant.organization}</div>
                   <div className={styles.detail}>{participant.mobileNumber}</div>
                   <div className={styles.detail}>{participant.gender}</div>
                   <div className={styles.detail}>{participant.category}</div>
                   <div className={styles.detail}>{participant.size}</div>
-                  <div className={styles.date}>{formatDate(participant.createdAt)}</div>
+                  <div className={styles.statusCell}>
+                    {participant.disabled ? (
+                      <span className={styles.statusBadgeDisabled}>Unenrolled</span>
+                    ) : (
+                      <span className={styles.statusBadgeActive}>Active</span>
+                    )}
+                  </div>
                   <div className={styles.participantActions}>
+                    <Button
+                      variant={participant.disabled ? 'primary' : 'outline'}
+                      size="small"
+                      onClick={() => handleToggleStatus(participant)}
+                    >
+                      {participant.disabled ? 'Re-enroll' : 'Unenroll'}
+                    </Button>
                     <Button
                       variant="secondary"
                       size="small"

@@ -278,6 +278,7 @@ const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant
     mobileNumber: data.mobileNumber,
     category: data.category,
     size: data.size,
+    disabled: data.disabled || false,
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
   };
@@ -470,4 +471,91 @@ export const subscribeToParticipantCount = (
       }
     }
   );
+};
+
+/**
+ * Toggle participant enrollment status (unenroll/re-enroll)
+ */
+export const toggleParticipantStatus = async (
+  id: string,
+  disabled: boolean
+): Promise<void> => {
+  try {
+    const participantDoc = doc(db, COLLECTION_NAME, id);
+    const snapshot = await getDoc(participantDoc);
+    
+    if (!snapshot.exists()) {
+      throw new Error('Participant not found');
+    }
+    
+    const data = snapshot.data();
+    
+    await updateDoc(participantDoc, {
+      disabled,
+      updatedAt: serverTimestamp(),
+    });
+    
+    // Update stats based on status change
+    if (disabled) {
+      // Unenrolling - decrement stats
+      await decrementParticipantStats(data.category);
+      await decrementOrgParticipantStats(data.organization, data.category);
+    } else {
+      // Re-enrolling - increment stats
+      await incrementParticipantStats(data.category);
+      await incrementOrgParticipantStats(data.organization, data.category);
+    }
+  } catch (error) {
+    console.error('Error toggling participant status:', error);
+    throw new Error('Failed to update participant status. Please try again.');
+  }
+};
+
+/**
+ * Bulk delete multiple participants
+ */
+export const bulkDeleteParticipants = async (
+  ids: string[],
+  onProgress?: (current: number, total: number) => void
+): Promise<{ success: number; failed: number }> => {
+  let success = 0;
+  let failed = 0;
+  
+  for (let i = 0; i < ids.length; i++) {
+    try {
+      await deleteParticipant(ids[i]);
+      success++;
+    } catch (error) {
+      console.error(`Failed to delete participant ${ids[i]}:`, error);
+      failed++;
+    }
+    onProgress?.(i + 1, ids.length);
+  }
+  
+  return { success, failed };
+};
+
+/**
+ * Bulk toggle status for multiple participants
+ */
+export const bulkToggleParticipantStatus = async (
+  ids: string[],
+  disabled: boolean,
+  onProgress?: (current: number, total: number) => void
+): Promise<{ success: number; failed: number }> => {
+  let success = 0;
+  let failed = 0;
+  
+  for (let i = 0; i < ids.length; i++) {
+    try {
+      await toggleParticipantStatus(ids[i], disabled);
+      success++;
+    } catch (error) {
+      console.error(`Failed to toggle status for participant ${ids[i]}:`, error);
+      failed++;
+    }
+    onProgress?.(i + 1, ids.length);
+  }
+  
+  return { success, failed };
 };

@@ -13,6 +13,7 @@ export interface Participant {
   mobileNumber: string;
   category: '3K' | '5K' | '10K';
   size: string;
+  disabled?: boolean; // If true, participant is unenrolled but not deleted
   createdAt?: Date;
   updatedAt?: Date;
 }
