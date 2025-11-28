@@ -23,6 +23,7 @@ import {
   toggleParticipantStatus,
   bulkToggleParticipantStatus,
   toggleSwagKitStatus,
+  checkBibNumberDuplicate,
 } from '@/lib/participantsService';
 import { getAllOrganizations } from '@/lib/organizationsService';
 import UploadParticipantsModal from '@/components/modals/UploadParticipantsModal';
@@ -64,7 +65,9 @@ export default function ParticipantsPage() {
     mobileNumber: '',
     category: '3K',
     size: '',
+    bibNumber: '',
   });
+  const [bibDuplicate, setBibDuplicate] = useState<Participant | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -191,7 +194,9 @@ export default function ParticipantsPage() {
       mobileNumber: participant.mobileNumber,
       category: participant.category,
       size: participant.size,
+      bibNumber: participant.bibNumber || '',
     });
+    setBibDuplicate(null);
     setIsEditModalOpen(true);
   };
 
@@ -204,6 +209,29 @@ export default function ParticipantsPage() {
       ...prev,
       [name]: value,
     }));
+    
+    // Clear bib duplicate when changing bib number
+    if (name === 'bibNumber') {
+      setBibDuplicate(null);
+    }
+  };
+
+  /**
+   * Check for bib number duplicate on blur
+   */
+  const handleBibBlur = async () => {
+    const bibNumber = editFormData.bibNumber?.trim();
+    if (!bibNumber) {
+      setBibDuplicate(null);
+      return;
+    }
+    
+    try {
+      const duplicate = await checkBibNumberDuplicate(bibNumber, editingParticipant?.id);
+      setBibDuplicate(duplicate);
+    } catch (error) {
+      console.error('Error checking bib duplicate:', error);
+    }
   };
 
   /**
@@ -212,11 +240,26 @@ export default function ParticipantsPage() {
   const handleUpdate = async () => {
     if (!editingParticipant?.id) return;
 
+    // Check for bib duplicate before saving
+    const bibNumber = editFormData.bibNumber?.trim();
+    if (bibNumber) {
+      const duplicate = await checkBibNumberDuplicate(bibNumber, editingParticipant.id);
+      if (duplicate) {
+        setBibDuplicate(duplicate);
+        toast.error('Bib number already exists');
+        return;
+      }
+    }
+
     try {
-      await updateParticipant(editingParticipant.id, editFormData);
+      await updateParticipant(editingParticipant.id, {
+        ...editFormData,
+        bibNumber: bibNumber || undefined,
+      });
       toast.success('Participant updated successfully');
       setIsEditModalOpen(false);
       setEditingParticipant(null);
+      setBibDuplicate(null);
       loadParticipants();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to update participant';
@@ -677,7 +720,7 @@ export default function ParticipantsPage() {
                 <div>Gender</div>
                 <div>Category</div>
                 <div>Size</div>
-                <div>Bib</div>
+                <div>Bib Number</div>
                 <div>Swag Kit</div>
                 <div>Actions</div>
               </div>
@@ -932,6 +975,22 @@ export default function ParticipantsPage() {
             onChange={handleEditInputChange}
             required
           />
+
+          <div className={styles.bibInputContainer}>
+            <Input
+              label="Bib Number"
+              name="bibNumber"
+              value={editFormData.bibNumber || ''}
+              onChange={handleEditInputChange}
+              onBlur={handleBibBlur}
+              placeholder="e.g., 3K-101"
+            />
+            {bibDuplicate && (
+              <div className={styles.bibDuplicateWarning}>
+                ⚠️ Already assigned to: {bibDuplicate.name} ({bibDuplicate.organization})
+              </div>
+            )}
+          </div>
         </div>
       </Modal>
 
