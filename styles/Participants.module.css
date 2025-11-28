@@ -436,34 +436,72 @@
   margin-right: 0.5rem;
 }
 
-/* Status Cell */
-.statusCell {
+/* Swag Kit Toggle - iOS Style */
+.swagKitCell {
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
-.statusBadgeActive {
+.toggleSwitch {
+  position: relative;
   display: inline-block;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-radius: 9999px;
-  background: #ecfdf5;
-  color: #059669;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
 }
 
-.statusBadgeDisabled {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-radius: 9999px;
-  background: #fef2f2;
-  color: #dc2626;
+.toggleInput {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggleSlider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--theme-border-dark, #cbd5e1);
+  border-radius: 22px;
+  transition: background-color 0.3s ease;
+}
+
+.toggleSlider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.toggleInput:checked + .toggleSlider {
+  background-color: var(--theme-primary, #14b8a6);
+}
+
+.toggleInput:checked + .toggleSlider::before {
+  transform: translateX(18px);
+}
+
+.toggleInput:focus + .toggleSlider {
+  box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb, 20, 184, 166), 0.3);
+}
+
+.toggleSwitch:active .toggleSlider::before {
+  width: 22px;
+}
+
+.toggleSwitch:active .toggleInput:checked + .toggleSlider::before {
+  transform: translateX(14px);
 }
 
 /* Disabled Row */

@@ -14,6 +14,7 @@ export interface Participant {
   category: '3K' | '5K' | '10K';
   size: string;
   disabled?: boolean; // If true, participant is unenrolled but not deleted
+  swagKitGiven?: boolean; // If true, swag kit has been given to participant
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -22,6 +22,7 @@ import {
   bulkDeleteParticipants,
   toggleParticipantStatus,
   bulkToggleParticipantStatus,
+  toggleSwagKitStatus,
 } from '@/lib/participantsService';
 import { getAllOrganizations } from '@/lib/organizationsService';
 import UploadParticipantsModal from '@/components/modals/UploadParticipantsModal';
@@ -319,6 +320,31 @@ export default function ParticipantsPage() {
       loadParticipants();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : `Failed to ${action} participant`;
+      toast.error(message);
+    }
+  };
+
+  /**
+   * Handle toggle swag kit status
+   */
+  const handleToggleSwagKit = async (participant: Participant) => {
+    if (!participant.id) return;
+    
+    const newStatus = !participant.swagKitGiven;
+    
+    // Optimistic update
+    setParticipants(prev => prev.map(p => 
+      p.id === participant.id ? { ...p, swagKitGiven: newStatus } : p
+    ));
+    
+    try {
+      await toggleSwagKitStatus(participant.id, newStatus);
+    } catch (error: unknown) {
+      // Rollback on error
+      setParticipants(prev => prev.map(p => 
+        p.id === participant.id ? { ...p, swagKitGiven: !newStatus } : p
+      ));
+      const message = error instanceof Error ? error.message : 'Failed to update swag kit status';
       toast.error(message);
     }
   };
@@ -650,7 +676,7 @@ export default function ParticipantsPage() {
                 <div>Gender</div>
                 <div>Category</div>
                 <div>Size</div>
-                <div>Status</div>
+                <div>Swag Kit</div>
                 <div>Actions</div>
               </div>
               {participants.map((participant: Participant) => (
@@ -672,12 +698,16 @@ export default function ParticipantsPage() {
                   <div className={styles.detail}>{participant.gender}</div>
                   <div className={styles.detail}>{participant.category}</div>
                   <div className={styles.detail}>{participant.size}</div>
-                  <div className={styles.statusCell}>
-                    {participant.disabled ? (
-                      <span className={styles.statusBadgeDisabled}>Unenrolled</span>
-                    ) : (
-                      <span className={styles.statusBadgeActive}>Active</span>
-                    )}
+                  <div className={styles.swagKitCell}>
+                    <label className={styles.toggleSwitch}>
+                      <input
+                        type="checkbox"
+                        checked={participant.swagKitGiven || false}
+                        onChange={() => handleToggleSwagKit(participant)}
+                        className={styles.toggleInput}
+                      />
+                      <span className={styles.toggleSlider}></span>
+                    </label>
                   </div>
                   <div className={styles.participantActions}>
                     <Button

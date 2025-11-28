@@ -10,14 +10,25 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui';
 import Link from 'next/link';
-import { getEventStats, EventStats } from '@/lib/statsService';
+import { getAllOrganizations } from '@/lib/organizationsService';
 import styles from '@/styles/Dashboard.module.css';
+
+/**
+ * Dashboard statistics calculated from organizations
+ */
+interface DashboardStats {
+  totalParticipants: number;
+  totalOrganizations: number;
+  category3K: number;
+  category5K: number;
+  category10K: number;
+}
 
 /**
  * Dashboard page component
  */
 export default function DashboardPage() {
-  const [stats, setStats] = useState<EventStats | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,8 +38,18 @@ export default function DashboardPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const eventStats = await getEventStats();
-      setStats(eventStats);
+      const organizations = await getAllOrganizations();
+      
+      // Calculate stats from organization data
+      const calculatedStats: DashboardStats = {
+        totalOrganizations: organizations.length,
+        totalParticipants: organizations.reduce((sum, org) => sum + (org.totalParticipants || 0), 0),
+        category3K: organizations.reduce((sum, org) => sum + (org.category3K || 0), 0),
+        category5K: organizations.reduce((sum, org) => sum + (org.category5K || 0), 0),
+        category10K: organizations.reduce((sum, org) => sum + (org.category10K || 0), 0),
+      };
+      
+      setStats(calculatedStats);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {

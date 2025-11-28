@@ -279,6 +279,7 @@ const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant
     category: data.category,
     size: data.size,
     disabled: data.disabled || false,
+    swagKitGiven: data.swagKitGiven || false,
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
   };
@@ -558,4 +559,24 @@ export const bulkToggleParticipantStatus = async (
   }
   
   return { success, failed };
+};
+
+/**
+ * Toggle swag kit status for a participant
+ */
+export const toggleSwagKitStatus = async (
+  id: string,
+  swagKitGiven: boolean
+): Promise<void> => {
+  try {
+    const participantDoc = doc(db, COLLECTION_NAME, id);
+    
+    await updateDoc(participantDoc, {
+      swagKitGiven,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error toggling swag kit status:', error);
+    throw new Error('Failed to update swag kit status. Please try again.');
+  }
 };
