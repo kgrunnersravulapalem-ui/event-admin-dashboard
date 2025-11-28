@@ -74,6 +74,7 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                     onChange={onInputChange}
                     direction="horizontal"
                     required
+                    columns={3}
                 />
 
                 <Input
@@ -97,9 +98,10 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                     onChange={onInputChange}
                     direction="horizontal"
                     required
+                    columns={3}
                 />
 
-                <Dropdown
+                <RadioGroup
                     label="T-Shirt Size"
                     name="size"
                     options={[
@@ -112,6 +114,7 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                     ]}
                     value={editFormData.size}
                     onChange={onInputChange}
+                    columns={3}
                     required
                 />
 

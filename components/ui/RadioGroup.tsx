@@ -33,51 +33,56 @@ export interface RadioGroupProps {
    * Label for the radio group
    */
   label?: string;
-  
+
   /**
    * Name attribute for the radio inputs
    */
   name: string;
-  
+
   /**
    * Array of radio options
    */
   options: RadioOption[];
-  
+
   /**
    * Currently selected value
    */
   value?: string;
-  
+
   /**
    * Change handler
    */
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  
+
   /**
    * Error message to display
    */
   error?: string;
-  
+
   /**
    * Whether the field is required
    */
   required?: boolean;
-  
+
   /**
    * Layout direction
    */
   direction?: 'vertical' | 'horizontal';
-  
+
   /**
    * Whether the radio group is disabled
    */
   disabled?: boolean;
-  
+
   /**
    * Additional CSS class names
    */
   className?: string;
+
+  /**
+   * Number of columns for grid layout
+   */
+  columns?: number;
 }
 
 /**
@@ -92,6 +97,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
   error,
   required,
   direction = 'vertical',
+  columns,
   disabled,
   className = '',
 }) => {
@@ -100,12 +106,19 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
 
   const wrapperClasses = [
     styles.radioGroupWrapper,
-    direction === 'horizontal' && styles.horizontal,
+    direction === 'horizontal' && !columns && styles.horizontal,
     error && styles.error,
     className,
   ]
     .filter(Boolean)
     .join(' ');
+
+  const containerStyle = columns
+    ? {
+      display: 'grid',
+      gridTemplateColumns: `repeat(${columns}, 1fr)`,
+    }
+    : undefined;
 
   return (
     <div className={wrapperClasses}>
@@ -115,9 +128,10 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
           {required && <span className={styles.required}>*</span>}
         </div>
       )}
-      
-      <div 
+
+      <div
         className={styles.optionsContainer}
+        style={containerStyle}
         role="radiogroup"
         aria-labelledby={label ? groupId : undefined}
         aria-required={required}
@@ -127,7 +141,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
         {options.map((option) => {
           const optionId = `${name}-${option.value}`;
           const isChecked = value === option.value;
-          
+
           return (
             <label
               key={option.value}

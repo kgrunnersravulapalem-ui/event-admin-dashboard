@@ -41,11 +41,11 @@ const CATEGORY_OPTIONS = [
  * T-shirt size options
  */
 const SIZE_OPTIONS = [
-  { value: 'XS', label: 'Extra Small (XS)' },
-  { value: 'S', label: 'Small (S)' },
-  { value: 'M', label: 'Medium (M)' },
-  { value: 'L', label: 'Large (L)' },
-  { value: 'XL', label: 'Extra Large (XL)' },
+  { value: 'XS', label: 'XS' },
+  { value: 'S', label: 'S' },
+  { value: 'M', label: 'M' },
+  { value: 'L', label: 'L' },
+  { value: 'XL', label: 'XL' },
   { value: 'XXL', label: 'XXL' },
 ];
 
@@ -278,6 +278,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
             error={errors.gender}
             direction="horizontal"
             required
+            columns={3}
           />
 
           <RadioGroup
@@ -289,6 +290,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
             error={errors.category}
             direction="horizontal"
             required
+            columns={3}
           />
         </div>
 
@@ -306,14 +308,14 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
         />
 
         {/* Size */}
-        <Dropdown
+        <RadioGroup
           label="T-Shirt Size"
           name="size"
           options={SIZE_OPTIONS}
-          placeholder="Select your size"
           value={formData.size}
           onChange={handleChange}
           error={errors.size}
+          columns={3}
           required
         />
 
