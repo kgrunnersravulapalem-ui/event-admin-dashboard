@@ -264,7 +264,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           onChange={handleChange}
           error={errors.name}
           required
-          autoComplete="name"
+        // autoComplete="name"
         />
 
         {/* Gender and Category Row */}
@@ -302,7 +302,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           onChange={handleChange}
           error={errors.mobileNumber}
           required
-          autoComplete="tel"
+        // autoComplete="tel"
         />
 
         {/* Size */}

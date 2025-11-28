@@ -25,22 +25,22 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
    * Label for the input field
    */
   label?: string;
-  
+
   /**
    * Error message to display
    */
   error?: string;
-  
+
   /**
    * Helper text to display below input
    */
   helperText?: string;
-  
+
   /**
    * Size variant
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Icon element to display on the left
    */
@@ -93,7 +93,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {required && <span className={styles.required}>*</span>}
           </label>
         )}
-        
+
         <div className={styles.inputContainer}>
           {icon && <span className={styles.icon}>{icon}</span>}
           <input
@@ -105,6 +105,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               error ? errorId : helperText ? helperId : undefined
             }
             required={required}
+            autoComplete="off"
             {...props}
           />
         </div>
@@ -114,7 +115,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {error}
           </span>
         )}
-        
+
         {!error && helperText && (
           <span id={helperId} className={styles.helperText}>
             {helperText}

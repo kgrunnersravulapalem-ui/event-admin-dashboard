@@ -82,8 +82,16 @@ export const updateParticipant = async (
   try {
     const participantDoc = doc(db, COLLECTION_NAME, id);
 
+    // Filter out undefined values - Firestore doesn't accept undefined
+    const cleanData: Record<string, any> = {};
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined) {
+        cleanData[key] = value;
+      }
+    });
+
     await updateDoc(participantDoc, {
-      ...data,
+      ...cleanData,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
