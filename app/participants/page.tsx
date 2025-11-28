@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Button, Card, Dropdown, Modal, Input, RadioGroup } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { Participant, Organization } from '@/types';
 import {
   getPaginatedParticipants,
@@ -27,6 +27,10 @@ import {
 } from '@/lib/participantsService';
 import { getAllOrganizations } from '@/lib/organizationsService';
 import UploadParticipantsModal from '@/components/modals/UploadParticipantsModal';
+import ParticipantsFilter from '@/components/participants/ParticipantsFilter';
+import ParticipantsTable from '@/components/participants/ParticipantsTable';
+import ParticipantsPagination from '@/components/participants/ParticipantsPagination';
+import EditParticipantModal from '@/components/participants/EditParticipantModal';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Participants.module.css';
 
@@ -82,23 +86,9 @@ export default function ParticipantsPage() {
   // Firestore read counter
   const [firestoreReads, setFirestoreReads] = useState(0);
 
-  // Action menu state
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-
   // Ref to track if organizations have been loaded (prevents double load in strict mode)
   const organizationsLoadedRef = useRef(false);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openMenuId && !(event.target as Element).closest(`.${styles.actionsCell}`)) {
-        setOpenMenuId(null);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [openMenuId]);
 
   /**
    * Build filters object for API call (uses applied filters only)
@@ -548,15 +538,6 @@ export default function ParticipantsPage() {
   };
 
   /**
-   * Handle search on Enter key
-   */
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  /**
    * Clear all filters
    */
   const clearFilters = () => {
@@ -574,20 +555,6 @@ export default function ParticipantsPage() {
     });
     setCurrentPage(1);
     setPageCursors([null]); // Reset cursors
-  };
-
-  /**
-   * Format date for display
-   */
-  const formatDate = (date?: Date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   // Check if there are any applied filters
@@ -637,96 +604,18 @@ export default function ParticipantsPage() {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className={styles.searchBar}>
-          <input
-            type="text"
-            placeholder="Search by name or mobile number..."
-            value={pendingSearchTerm}
-            onChange={(e) => setPendingSearchTerm(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            className={styles.searchInput}
-          />
-          <Button onClick={handleSearch}>
-            Search
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className={styles.filtersCard}>
-          <div className={styles.filtersGrid}>
-            <div className={styles.filterItem}>
-              <Dropdown
-                label="Organization"
-                options={[
-                  { value: '', label: 'All Organizations' },
-                  ...organizations.map((org) => ({
-                    value: org.name,
-                    label: org.name,
-                  })),
-                ]}
-                value={pendingFilters.organization}
-                onChange={(e) =>
-                  setPendingFilters({ ...pendingFilters, organization: e.target.value })
-                }
-              />
-            </div>
-
-            <div className={styles.filterItem}>
-              <Dropdown
-                label="Category"
-                options={[
-                  { value: '', label: 'All Categories' },
-                  { value: '3K', label: '3K' },
-                  { value: '5K', label: '5K' },
-                  { value: '10K', label: '10K' },
-                ]}
-                value={pendingFilters.category}
-                onChange={(e) =>
-                  setPendingFilters({ ...pendingFilters, category: e.target.value })
-                }
-              />
-            </div>
-
-            <div className={styles.filterItem}>
-              <Dropdown
-                label="Swag Kit"
-                options={[
-                  { value: '', label: 'All' },
-                  { value: 'true', label: 'Received' },
-                  { value: 'false', label: 'Not Received' },
-                ]}
-                value={
-                  pendingFilters.swagKitGiven === undefined
-                    ? ''
-                    : pendingFilters.swagKitGiven
-                      ? 'true'
-                      : 'false'
-                }
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const swagKitGiven =
-                    value === '' ? undefined : value === 'true';
-                  setPendingFilters({ ...pendingFilters, swagKitGiven });
-                }}
-              />
-            </div>
-
-            <div className={styles.filterItem}>
-              <Button onClick={applyFilters}>
-                Apply Filters
-              </Button>
-            </div>
-
-            {(hasAppliedFilters || hasPendingChanges) && (
-              <div className={styles.filterItem}>
-                <Button variant="danger" onClick={clearFilters}>
-                  Clear All
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+        <ParticipantsFilter
+          pendingFilters={pendingFilters}
+          setPendingFilters={setPendingFilters}
+          pendingSearchTerm={pendingSearchTerm}
+          setPendingSearchTerm={setPendingSearchTerm}
+          organizations={organizations}
+          onApply={applyFilters}
+          onClear={clearFilters}
+          onSearch={handleSearch}
+          hasAppliedFilters={!!hasAppliedFilters}
+          hasPendingChanges={hasPendingChanges}
+        />
 
         {/* Participants List */}
         {loading ? (
@@ -741,327 +630,56 @@ export default function ParticipantsPage() {
           </Card>
         ) : (
           <>
-            <div className={styles.paginationTop}>
-              <div className={styles.paginationInfo}>
-                Showing {participants.length} participants
-              </div>
-              <div className={styles.itemsPerPageContainer}>
-                <span className={styles.itemsPerPageLabel}>Show:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                  className={styles.itemsPerPageSelect}
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-              </div>
-            </div>
+            <ParticipantsPagination
+              currentPage={currentPage}
+              hasMore={hasMore}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              currentCount={participants.length}
+              showInfo={true}
+              showNavigation={false}
+            />
 
-            {/* Bulk Actions Bar */}
-            {selectedIds.size > 0 && (
-              <div className={styles.bulkActions}>
-                <span className={styles.selectedCount}>
-                  {selectedIds.size} selected
-                </span>
-                <Button
-                  variant="outline"
-                  size="small"
-                  onClick={() => handleBulkToggleStatus(true)}
-                >
-                  Unenroll Selected
-                </Button>
-                <Button
-                  variant="outline"
-                  size="small"
-                  onClick={() => handleBulkToggleStatus(false)}
-                >
-                  Re-enroll Selected
-                </Button>
-                <Button
-                  variant="danger"
-                  size="small"
-                  onClick={handleBulkDelete}
-                  disabled={isBulkDeleting}
-                >
-                  {isBulkDeleting ? 'Deleting...' : 'Delete Selected'}
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="small"
-                  onClick={() => setSelectedIds(new Set())}
-                >
-                  Clear Selection
-                </Button>
-              </div>
-            )}
+            <ParticipantsTable
+              participants={participants}
+              selectedIds={selectedIds}
+              onSelect={handleSelect}
+              onSelectAll={handleSelectAll}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onToggleStatus={handleToggleStatus}
+              onToggleSwagKit={handleToggleSwagKit}
+              onBulkDelete={handleBulkDelete}
+              onBulkToggleStatus={handleBulkToggleStatus}
+              isBulkDeleting={isBulkDeleting}
+            />
 
-            <div className={styles.list}>
-              <div className={styles.listHeader}>
-                <div className={styles.checkboxCell}>
-                  <input
-                    type="checkbox"
-                    checked={participants.length > 0 && selectedIds.size === participants.length}
-                    onChange={handleSelectAll}
-                    className={styles.checkbox}
-                  />
-                </div>
-                <div>Name</div>
-                <div>Organization</div>
-                <div>Mobile</div>
-                <div>Gender</div>
-                <div>Category</div>
-                <div>Size</div>
-                <div>Bib Number</div>
-                <div>Swag Kit</div>
-                <div>Actions</div>
-              </div>
-              {participants.map((participant: Participant) => (
-                <div
-                  key={participant.id}
-                  className={`${styles.participantCard} ${participant.disabled ? styles.disabledRow : ''}`}
-                >
-                  <div className={styles.checkboxCell}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(participant.id!)}
-                      onChange={() => handleSelect(participant.id!)}
-                      className={styles.checkbox}
-                    />
-                  </div>
-                  <div className={styles.participantName}>{participant.name}</div>
-                  <div className={styles.organization}>{participant.organization}</div>
-                  <div className={styles.detail}>{participant.mobileNumber}</div>
-                  <div className={styles.detail}>{participant.gender}</div>
-                  <div className={styles.detail}>{participant.category}</div>
-                  <div className={styles.detail}>{participant.size}</div>
-                  <div className={styles.bibCell}>
-                    {participant.bibNumber ? (
-                      <span className={styles.bibBadge}>{participant.bibNumber}</span>
-                    ) : (
-                      <span className={styles.noBib}>-</span>
-                    )}
-                  </div>
-                  <div className={styles.swagKitCell}>
-                    <label className={styles.toggleSwitch}>
-                      <input
-                        type="checkbox"
-                        checked={participant.swagKitGiven || false}
-                        onChange={() => handleToggleSwagKit(participant)}
-                        className={styles.toggleInput}
-                      />
-                      <span className={styles.toggleSlider}></span>
-                    </label>
-                  </div>
-                  <div className={styles.actionsCell}>
-                    <button
-                      className={styles.menuButton}
-                      onClick={() => setOpenMenuId(openMenuId === participant.id ? null : participant.id || null)}
-                      aria-label="Actions menu"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <circle cx="8" cy="3" r="1.5" />
-                        <circle cx="8" cy="8" r="1.5" />
-                        <circle cx="8" cy="13" r="1.5" />
-                      </svg>
-                    </button>
-                    {openMenuId === participant.id && (
-                      <div className={styles.actionMenu}>
-                        <button
-                          className={styles.menuItem}
-                          onClick={() => {
-                            handleEdit(participant);
-                            setOpenMenuId(null);
-                          }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                          Edit
-                        </button>
-                        <button
-                          className={styles.menuItem}
-                          onClick={() => {
-                            handleToggleStatus(participant);
-                            setOpenMenuId(null);
-                          }}
-                        >
-                          {participant.disabled ? (
-                            <>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                              Re-enroll
-                            </>
-                          ) : (
-                            <>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                              </svg>
-                              Unenroll
-                            </>
-                          )}
-                        </button>
-                        <div className={styles.menuDivider} />
-                        <button
-                          className={`${styles.menuItem} ${styles.menuItemDanger}`}
-                          onClick={() => {
-                            participant.id && handleDelete(participant.id, participant.name);
-                            setOpenMenuId(null);
-                          }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className={styles.pagination}>
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-
-              <div className={styles.pageNumbers}>
-                <span className={styles.pageNumber}>Page {currentPage}</span>
-              </div>
-
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={!hasMore}
-              >
-                Next
-              </Button>
-            </div>
+            <ParticipantsPagination
+              currentPage={currentPage}
+              hasMore={hasMore}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              currentCount={participants.length}
+              showInfo={false}
+              showNavigation={true}
+            />
           </>
         )}
       </div>
 
       {/* Edit Participant Modal */}
-      <Modal
+      <EditParticipantModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title="Edit Participant"
-        size="medium"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleUpdate}>
-              Update
-            </Button>
-          </>
-        }
-      >
-        <div className={styles.editForm}>
-          <Input
-            label="Name"
-            name="name"
-            value={editFormData.name}
-            onChange={handleEditInputChange}
-            required
-          />
-
-          <Dropdown
-            label="Organization"
-            name="organization"
-            options={organizations.map((org) => ({
-              value: org.name,
-              label: org.name,
-            }))}
-            value={editFormData.organization}
-            onChange={handleEditInputChange}
-            required
-          />
-
-          <RadioGroup
-            label="Gender"
-            name="gender"
-            options={[
-              { value: 'Male', label: 'Male' },
-              { value: 'Female', label: 'Female' },
-              { value: 'Other', label: 'Other' },
-            ]}
-            value={editFormData.gender}
-            onChange={handleEditInputChange}
-            direction="horizontal"
-            required
-          />
-
-          <Input
-            label="Mobile Number"
-            name="mobileNumber"
-            type="tel"
-            value={editFormData.mobileNumber}
-            onChange={handleEditInputChange}
-            required
-          />
-
-          <RadioGroup
-            label="Category"
-            name="category"
-            options={[
-              { value: '3K', label: '3K' },
-              { value: '5K', label: '5K' },
-              { value: '10K', label: '10K' },
-            ]}
-            value={editFormData.category}
-            onChange={handleEditInputChange}
-            direction="horizontal"
-            required
-          />
-
-          <Dropdown
-            label="T-Shirt Size"
-            name="size"
-            options={[
-              { value: 'XS', label: 'XS' },
-              { value: 'S', label: 'S' },
-              { value: 'M', label: 'M' },
-              { value: 'L', label: 'L' },
-              { value: 'XL', label: 'XL' },
-              { value: 'XXL', label: 'XXL' },
-            ]}
-            value={editFormData.size}
-            onChange={handleEditInputChange}
-            required
-          />
-
-          <div className={styles.bibInputContainer}>
-            <Input
-              label="Bib Number"
-              name="bibNumber"
-              value={editFormData.bibNumber || ''}
-              onChange={handleEditInputChange}
-              onBlur={handleBibBlur}
-              placeholder="e.g., 3K-101"
-            />
-            {bibDuplicate && (
-              <div className={styles.bibDuplicateWarning}>
-                ⚠️ Already assigned to: {bibDuplicate.name} ({bibDuplicate.organization})
-              </div>
-            )}
-          </div>
-        </div>
-      </Modal>
+        editFormData={editFormData}
+        onInputChange={handleEditInputChange}
+        onUpdate={handleUpdate}
+        organizations={organizations}
+        bibDuplicate={bibDuplicate}
+        onBibBlur={handleBibBlur}
+      />
 
       {/* Upload Modal */}
       <UploadParticipantsModal
