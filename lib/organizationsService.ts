@@ -25,7 +25,6 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Organization } from '@/types';
-import { incrementOrganizationStats, decrementOrganizationStats } from './statsService';
 
 const COLLECTION_NAME = 'organizations';
 
@@ -50,9 +49,6 @@ export const addOrganization = async (
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    
-    // Update stats
-    await incrementOrganizationStats();
     
     return docRef.id;
   } catch (error) {
@@ -88,9 +84,6 @@ export const deleteOrganization = async (id: string): Promise<void> => {
   try {
     const orgDoc = doc(db, COLLECTION_NAME, id);
     await deleteDoc(orgDoc);
-    
-    // Update stats
-    await decrementOrganizationStats();
   } catch (error) {
     console.error('Error deleting organization:', error);
     throw new Error('Failed to delete organization. Please try again.');

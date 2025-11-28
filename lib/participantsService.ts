@@ -29,7 +29,6 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Participant } from '@/types';
-import { incrementParticipantStats, decrementParticipantStats } from './statsService';
 import { incrementOrgParticipantStats, decrementOrgParticipantStats } from './organizationsService';
 
 const COLLECTION_NAME = 'participants';
@@ -55,9 +54,6 @@ export const addParticipant = async (
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    
-    // Update global stats
-    await incrementParticipantStats(participant.category);
     
     // Update organization stats
     await incrementOrgParticipantStats(participant.organization, participant.category);
@@ -101,9 +97,6 @@ export const deleteParticipant = async (id: string): Promise<void> => {
     if (snapshot.exists()) {
       const data = snapshot.data();
       await deleteDoc(participantDoc);
-      
-      // Update global stats
-      await decrementParticipantStats(data.category);
       
       // Update organization stats
       await decrementOrgParticipantStats(data.organization, data.category);
@@ -496,14 +489,12 @@ export const toggleParticipantStatus = async (
       updatedAt: serverTimestamp(),
     });
     
-    // Update stats based on status change
+    // Update organization stats based on status change
     if (disabled) {
       // Unenrolling - decrement stats
-      await decrementParticipantStats(data.category);
       await decrementOrgParticipantStats(data.organization, data.category);
     } else {
       // Re-enrolling - increment stats
-      await incrementParticipantStats(data.category);
       await incrementOrgParticipantStats(data.organization, data.category);
     }
   } catch (error) {
