@@ -70,15 +70,31 @@ export default function OrganizationsPage() {
       if (editingId) {
         await updateOrganization(editingId, formData);
         toast.success('Organization updated successfully');
+        
+        // Optimistically update local state instead of reloading
+        setOrganizations(prev => prev.map(org => 
+          org.id === editingId 
+            ? { ...org, ...formData }
+            : org
+        ));
       } else {
-        await addOrganization(formData);
+        const newId = await addOrganization(formData);
         toast.success('Organization added successfully');
+        
+        // Add new organization to local state
+        setOrganizations(prev => [...prev, {
+          id: newId,
+          ...formData,
+          totalParticipants: 0,
+          category3K: 0,
+          category5K: 0,
+          category10K: 0,
+        }]);
       }
       
       setFormData({ name: '', code: '' });
       setShowForm(false);
       setEditingId(null);
-      loadOrganizations();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'An error occurred';
       toast.error(message);
@@ -107,11 +123,18 @@ export default function OrganizationsPage() {
       return;
     }
 
+    // Store previous state for rollback
+    const previousOrganizations = [...organizations];
+
+    // Optimistically remove from UI
+    setOrganizations(prev => prev.filter(org => org.id !== id));
+
     try {
       await deleteOrganization(id);
       toast.success('Organization deleted successfully');
-      loadOrganizations();
     } catch (error: unknown) {
+      // Rollback on error
+      setOrganizations(previousOrganizations);
       const message = error instanceof Error ? error.message : 'Failed to delete organization';
       toast.error(message);
     }

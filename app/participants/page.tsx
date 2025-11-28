@@ -263,9 +263,12 @@ export default function ParticipantsPage() {
   const handleUpdate = async () => {
     if (!editingParticipant?.id) return;
 
-    // Check for bib duplicate before saving
+    // Check for bib duplicate before saving (only if bib was changed)
     const bibNumber = editFormData.bibNumber?.trim();
-    if (bibNumber) {
+    const originalBib = editingParticipant.bibNumber?.trim();
+    const bibChanged = bibNumber !== originalBib;
+    
+    if (bibNumber && bibChanged) {
       const duplicate = await checkBibNumberDuplicate(bibNumber, editingParticipant.id);
       // Count read for duplicate check
       setFirestoreReads(prev => prev + 1);
@@ -282,10 +285,22 @@ export default function ParticipantsPage() {
         bibNumber: bibNumber || undefined,
       });
       toast.success('Participant updated successfully');
+      
+      // Optimistically update the local state instead of reloading
+      setParticipants(prev => prev.map(p => 
+        p.id === editingParticipant.id 
+          ? { 
+              ...p, 
+              ...editFormData, 
+              bibNumber: bibNumber || undefined,
+              updatedAt: new Date() 
+            } 
+          : p
+      ));
+      
       setIsEditModalOpen(false);
       setEditingParticipant(null);
       setBibDuplicate(null);
-      loadParticipants();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to update participant';
       toast.error(message);
