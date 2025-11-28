@@ -677,45 +677,6 @@ export const checkBibNumberDuplicate = async (
 };
 
 /**
- * Get participants by organization who don't have bib numbers assigned
- * Optionally filter by category
- */
-export const getParticipantsWithoutBibs = async (
-  organization: string,
-  category?: string
-): Promise<Participant[]> => {
-  try {
-    const participantsRef = getParticipantsCollection();
-    let q;
-    
-    if (category) {
-      q = query(
-        participantsRef,
-        where('organization', '==', organization),
-        where('category', '==', category),
-        orderBy('createdAt', 'asc')
-      );
-    } else {
-      q = query(
-        participantsRef,
-        where('organization', '==', organization),
-        orderBy('createdAt', 'asc')
-      );
-    }
-    
-    const querySnapshot = await getDocs(q);
-    
-    // Filter to only those without bib numbers
-    return querySnapshot.docs
-      .map(doc => docToParticipant(doc))
-      .filter(p => !p.bibNumber);
-  } catch (error) {
-    console.error('Error fetching participants without bibs:', error);
-    throw new Error('Failed to fetch participants');
-  }
-};
-
-/**
  * Get all participants for an organization (with and without bibs)
  * Optionally filter by category
  */

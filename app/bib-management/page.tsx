@@ -12,7 +12,6 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button, Card, Dropdown, Input } from '@/components/ui';
 import { Participant, Organization } from '@/types';
 import { 
-  getParticipantsWithoutBibs,
   getParticipantsByOrganization,
   generateBibNumbers,
   updateBibNumber,
@@ -42,6 +41,9 @@ export default function BibManagementPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrganization, setSelectedOrganization] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Firestore read counter
+  const [firestoreReads, setFirestoreReads] = useState(0);
   
   // Category-specific config and data
   const [categoryConfigs, setCategoryConfigs] = useState<Record<string, CategoryConfig>>({
@@ -91,6 +93,8 @@ export default function BibManagementPage() {
     try {
       const orgs = await getAllOrganizations();
       setOrganizations(orgs);
+      // Count organization reads
+      setFirestoreReads(prev => prev + orgs.length);
     } catch (error) {
       toast.error('Failed to load organizations');
     }
@@ -101,22 +105,25 @@ export default function BibManagementPage() {
     
     setLoading(true);
     try {
-      // Load data for all categories in parallel
+      // Load data for all categories in parallel - only fetch all participants once per category
       const results = await Promise.all(
         CATEGORIES.map(async (category) => {
-          const [withoutBibs, allParticipants] = await Promise.all([
-            getParticipantsWithoutBibs(selectedOrganization, category),
-            getParticipantsByOrganization(selectedOrganization, category),
-          ]);
+          const allParticipants = await getParticipantsByOrganization(selectedOrganization, category);
+          // Filter locally for participants without bibs
+          const withoutBibs = allParticipants.filter(p => !p.bibNumber);
           return { category, withoutBibs, allParticipants };
         })
       );
       
       const newCategoryData: Record<string, CategoryData> = {};
+      let totalReads = 0;
       results.forEach(({ category, withoutBibs, allParticipants }) => {
         newCategoryData[category] = { withoutBibs, allParticipants };
+        // Only count one query per category now
+        totalReads += allParticipants.length;
       });
       setCategoryData(newCategoryData);
+      setFirestoreReads(prev => prev + totalReads);
     } catch (error) {
       toast.error('Failed to load participants');
     } finally {
@@ -128,15 +135,16 @@ export default function BibManagementPage() {
     if (!selectedOrganization) return;
     
     try {
-      const [withoutBibs, allParticipants] = await Promise.all([
-        getParticipantsWithoutBibs(selectedOrganization, category),
-        getParticipantsByOrganization(selectedOrganization, category),
-      ]);
+      const allParticipants = await getParticipantsByOrganization(selectedOrganization, category);
+      // Filter locally for participants without bibs
+      const withoutBibs = allParticipants.filter(p => !p.bibNumber);
       
       setCategoryData(prev => ({
         ...prev,
         [category]: { withoutBibs, allParticipants },
       }));
+      // Count reads for this category reload - only one query now
+      setFirestoreReads(prev => prev + allParticipants.length);
     } catch (error) {
       console.error(`Failed to load ${category} participants:`, error);
     }
@@ -209,6 +217,8 @@ export default function BibManagementPage() {
     try {
       const duplicate = await checkBibNumberDuplicate(editBibValue.trim(), editingId || undefined);
       setDuplicateParticipant(duplicate);
+      // Duplicate check reads 1 document (or 0 if no match)
+      setFirestoreReads(prev => prev + 1);
     } catch (error) {
       console.error('Error checking duplicate:', error);
     }
@@ -220,6 +230,8 @@ export default function BibManagementPage() {
     // Check for duplicate before saving
     if (editBibValue.trim()) {
       const duplicate = await checkBibNumberDuplicate(editBibValue.trim(), editingId);
+      // Duplicate check reads 1 document
+      setFirestoreReads(prev => prev + 1);
       if (duplicate) {
         setDuplicateParticipant(duplicate);
         toast.error('Bib number already exists');
@@ -281,6 +293,11 @@ export default function BibManagementPage() {
           <div>
             <h1 className={styles.title}>Bib Management</h1>
             <p className={styles.subtitle}>Generate and manage bib numbers by category</p>
+          </div>
+          <div className={styles.readCounter}>
+            <span className={styles.readIcon}>🔥</span>
+            <span className={styles.readCount}>{firestoreReads}</span>
+            <span className={styles.readLabel}>reads</span>
           </div>
         </div>
 

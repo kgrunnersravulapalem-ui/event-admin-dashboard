@@ -15,6 +15,7 @@ import { toast } from 'react-hot-toast';
 import { Button, Input, Dropdown, RadioGroup } from '@/components/ui';
 import { addParticipant, validateParticipant } from '@/lib/firestoreService';
 import { getAllOrganizations } from '@/lib/organizationsService';
+import { checkBibNumberDuplicate } from '@/lib/participantsService';
 import { Participant, Organization } from '@/types';
 import styles from '@/styles/EnrollmentForm.module.css';
 
@@ -99,6 +100,7 @@ const initialFormData: Omit<Participant, 'id' | 'createdAt'> = {
   mobileNumber: '',
   category: '3K',
   size: '',
+  bibNumber: '',
 };
 
 /**
@@ -185,6 +187,26 @@ const EnrollmentForm: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    
+    // Check for bib number duplicate if bib is provided
+    const bibNumber = formData.bibNumber?.trim();
+    if (bibNumber) {
+      try {
+        const duplicate = await checkBibNumberDuplicate(bibNumber);
+        if (duplicate) {
+          toast.error(
+            `Bib "${bibNumber}" is already assigned to ${duplicate.name} (${duplicate.organization})`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking bib duplicate:', error);
+        toast.error('Failed to verify bib number. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     try {
       // Submit to Firestore
@@ -300,6 +322,17 @@ const EnrollmentForm: React.FC = () => {
           onChange={handleChange}
           error={errors.size}
           required
+        />
+
+        {/* Bib Number (Optional) */}
+        <Input
+          label="Bib Number (Optional)"
+          name="bibNumber"
+          type="text"
+          placeholder="e.g., 3K-101"
+          value={formData.bibNumber || ''}
+          onChange={handleChange}
+          error={errors.bibNumber}
         />
       </div>
 

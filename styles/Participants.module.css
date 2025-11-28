@@ -32,6 +32,32 @@
   align-items: center;
 }
 
+/* Firestore Read Counter */
+.readCounter {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.readIcon {
+  font-size: 0.875rem;
+}
+
+.readCount {
+  font-weight: 700;
+  color: #b45309;
+}
+
+.readLabel {
+  color: #92400e;
+  font-weight: 500;
+}
+
 .subtitle {
   font-size: 0.875rem;
   font-weight: 500;
@@ -142,6 +168,7 @@
   border: 1px solid var(--theme-border);
   border-radius: var(--border-radius-sm);
   overflow-x: auto;
+  min-height: 250px;
 }
 
 .participantCard {

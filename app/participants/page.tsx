@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button, Card, Dropdown, Modal, Input, RadioGroup } from '@/components/ui';
 import { Participant, Organization } from '@/types';
@@ -76,8 +76,14 @@ export default function ParticipantsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   
+  // Firestore read counter
+  const [firestoreReads, setFirestoreReads] = useState(0);
+  
   // Action menu state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  
+  // Ref to track if organizations have been loaded (prevents double load in strict mode)
+  const organizationsLoadedRef = useRef(false);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -111,13 +117,19 @@ export default function ParticipantsPage() {
   }, [appliedFilters, appliedSearchTerm]);
 
   /**
-   * Load organizations on mount
+   * Load organizations on mount (only once)
    */
   useEffect(() => {
+    // Guard to prevent double loading (especially in React strict mode)
+    if (organizationsLoadedRef.current) return;
+    organizationsLoadedRef.current = true;
+    
     const loadOrganizations = async () => {
       try {
         const orgsData = await getAllOrganizations();
         setOrganizations(orgsData);
+        // Count organization reads
+        setFirestoreReads(prev => prev + orgsData.length);
       } catch (error) {
         toast.error('Failed to load organizations');
         console.error(error);
@@ -132,10 +144,18 @@ export default function ParticipantsPage() {
    * Disabled during bulk uploads to prevent excessive reads
    */
   useEffect(() => {
+    let isFirstCallback = true;
+    
     const unsubscribe = subscribeToParticipantCount(
       (newCount) => {
         // Skip updates during bulk upload to save reads
         if (isUploading) return;
+        
+        // Skip the first callback - let the pagination effect handle initial load
+        if (isFirstCallback) {
+          isFirstCallback = false;
+          return;
+        }
         
         // If count changed, reload
         if (newCount !== totalCount) {
@@ -170,10 +190,11 @@ export default function ParticipantsPage() {
         currentPage,
         itemsPerPage
       );
-      
       setParticipants(result.participants);
       setTotalCount(result.totalCount);
       setTotalPages(result.totalPages);
+      // Count reads: participants + 1 for count query
+      setFirestoreReads(prev => prev + result.participants.length + 1);
     } catch (error) {
       toast.error('Failed to load participants');
       console.error(error);
@@ -229,6 +250,8 @@ export default function ParticipantsPage() {
     try {
       const duplicate = await checkBibNumberDuplicate(bibNumber, editingParticipant?.id);
       setBibDuplicate(duplicate);
+      // Count read for duplicate check
+      setFirestoreReads(prev => prev + 1);
     } catch (error) {
       console.error('Error checking bib duplicate:', error);
     }
@@ -244,6 +267,8 @@ export default function ParticipantsPage() {
     const bibNumber = editFormData.bibNumber?.trim();
     if (bibNumber) {
       const duplicate = await checkBibNumberDuplicate(bibNumber, editingParticipant.id);
+      // Count read for duplicate check
+      setFirestoreReads(prev => prev + 1);
       if (duplicate) {
         setBibDuplicate(duplicate);
         toast.error('Bib number already exists');
@@ -459,6 +484,8 @@ export default function ParticipantsPage() {
       const csvContent = exportParticipantsToCSV(allParticipants);
       const filename = `participants_${new Date().toISOString().split('T')[0]}.csv`;
       downloadCSV(csvContent, filename);
+      // Count reads for export
+      setFirestoreReads(prev => prev + allParticipants.length);
       toast.success(`Exported ${allParticipants.length} participants`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Export failed';
@@ -559,6 +586,11 @@ export default function ParticipantsPage() {
             <h1 className={styles.title}>Participants</h1>
           </div>
           <div className={styles.headerActions}>
+            <div className={styles.readCounter}>
+              <span className={styles.readIcon}>🔥</span>
+              <span className={styles.readCount}>{firestoreReads}</span>
+              <span className={styles.readLabel}>reads</span>
+            </div>
             <Button variant="outline" onClick={() => setIsUploadModalOpen(true)}>
               Upload CSV
             </Button>
