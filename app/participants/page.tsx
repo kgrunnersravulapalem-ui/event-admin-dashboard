@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Button, Card, Dropdown, DatePicker, Modal, Input, RadioGroup } from '@/components/ui';
+import { Button, Card, Dropdown, Modal, Input, RadioGroup } from '@/components/ui';
 import { Participant, Organization } from '@/types';
 import { 
   getPaginatedParticipants,
@@ -41,8 +41,6 @@ export default function ParticipantsPage() {
   const [pendingFilters, setPendingFilters] = useState({
     organization: '',
     category: '',
-    startDate: '',
-    endDate: '',
   });
   const [pendingSearchTerm, setPendingSearchTerm] = useState('');
   
@@ -50,8 +48,6 @@ export default function ParticipantsPage() {
   const [appliedFilters, setAppliedFilters] = useState({
     organization: '',
     category: '',
-    startDate: '',
-    endDate: '',
   });
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   
@@ -71,6 +67,7 @@ export default function ParticipantsPage() {
   });
   const [isExporting, setIsExporting] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Selection state for bulk actions
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -103,12 +100,6 @@ export default function ParticipantsPage() {
     if (appliedFilters.category) {
       apiFilters.category = appliedFilters.category;
     }
-    if (appliedFilters.startDate) {
-      apiFilters.startDate = new Date(appliedFilters.startDate);
-    }
-    if (appliedFilters.endDate) {
-      apiFilters.endDate = new Date(appliedFilters.endDate);
-    }
     if (appliedSearchTerm) {
       apiFilters.searchTerm = appliedSearchTerm;
     }
@@ -135,11 +126,15 @@ export default function ParticipantsPage() {
   /**
    * Subscribe to real-time participant count updates
    * This will trigger a reload when new participants are added
+   * Disabled during bulk uploads to prevent excessive reads
    */
   useEffect(() => {
     const unsubscribe = subscribeToParticipantCount(
       (newCount) => {
-        // If count changed and we're on page 1 with no filters, reload
+        // Skip updates during bulk upload to save reads
+        if (isUploading) return;
+        
+        // If count changed, reload
         if (newCount !== totalCount) {
           loadParticipants();
         }
@@ -150,7 +145,7 @@ export default function ParticipantsPage() {
     );
 
     return () => unsubscribe();
-  }, [totalCount, appliedFilters, appliedSearchTerm, currentPage, itemsPerPage]);
+  }, [totalCount, appliedFilters, appliedSearchTerm, currentPage, itemsPerPage, isUploading]);
 
   /**
    * Load participants when applied filters or pagination changes
@@ -302,19 +297,29 @@ export default function ParticipantsPage() {
     }
 
     setIsBulkDeleting(true);
+    
+    // Store current state for potential rollback
+    const previousParticipants = [...participants];
+    const idsToDelete = Array.from(selectedIds);
+    
+    // Optimistic update - remove from UI immediately
+    setParticipants(prev => prev.filter(p => !selectedIds.has(p.id || '')));
+    setSelectedIds(new Set());
+    
     try {
-      const result = await bulkDeleteParticipants(Array.from(selectedIds));
+      const result = await bulkDeleteParticipants(idsToDelete);
       
       if (result.success > 0) {
         toast.success(`Deleted ${result.success} participant(s)`);
       }
       if (result.failed > 0) {
         toast.error(`Failed to delete ${result.failed} participant(s)`);
+        // Reload to get accurate state if some failed
+        loadParticipants();
       }
-      
-      setSelectedIds(new Set());
-      loadParticipants();
     } catch (error) {
+      // Rollback on error
+      setParticipants(previousParticipants);
       toast.error('Bulk delete failed');
     } finally {
       setIsBulkDeleting(false);
@@ -372,19 +377,30 @@ export default function ParticipantsPage() {
     
     const action = disable ? 'unenroll' : 're-enroll';
     
+    // Store current state for potential rollback
+    const previousParticipants = [...participants];
+    const idsToToggle = Array.from(selectedIds);
+    
+    // Optimistic update - update UI immediately
+    setParticipants(prev => prev.map(p => 
+      selectedIds.has(p.id || '') ? { ...p, disabled: disable } : p
+    ));
+    setSelectedIds(new Set());
+    
     try {
-      const result = await bulkToggleParticipantStatus(Array.from(selectedIds), disable);
+      const result = await bulkToggleParticipantStatus(idsToToggle, disable);
       
       if (result.success > 0) {
         toast.success(`${action === 'unenroll' ? 'Unenrolled' : 'Re-enrolled'} ${result.success} participant(s)`);
       }
       if (result.failed > 0) {
         toast.error(`Failed to ${action} ${result.failed} participant(s)`);
+        // Reload to get accurate state if some failed
+        loadParticipants();
       }
-      
-      setSelectedIds(new Set());
-      loadParticipants();
     } catch (error) {
+      // Rollback on error
+      setParticipants(previousParticipants);
       toast.error(`Bulk ${action} failed`);
     }
   };
@@ -443,15 +459,11 @@ export default function ParticipantsPage() {
     setPendingFilters({
       organization: '',
       category: '',
-      startDate: '',
-      endDate: '',
     });
     setAppliedSearchTerm('');
     setAppliedFilters({
       organization: '',
       category: '',
-      startDate: '',
-      endDate: '',
     });
     setCurrentPage(1);
   };
@@ -474,17 +486,13 @@ export default function ParticipantsPage() {
   const hasAppliedFilters = 
     appliedSearchTerm || 
     appliedFilters.organization || 
-    appliedFilters.category || 
-    appliedFilters.startDate || 
-    appliedFilters.endDate;
+    appliedFilters.category;
 
   // Check if pending filters differ from applied (show apply button)
   const hasPendingChanges = 
     pendingSearchTerm !== appliedSearchTerm ||
     pendingFilters.organization !== appliedFilters.organization ||
-    pendingFilters.category !== appliedFilters.category ||
-    pendingFilters.startDate !== appliedFilters.startDate ||
-    pendingFilters.endDate !== appliedFilters.endDate;
+    pendingFilters.category !== appliedFilters.category;
 
   // Pagination calculations
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -564,28 +572,6 @@ export default function ParticipantsPage() {
                 value={pendingFilters.category}
                 onChange={(e) =>
                   setPendingFilters({ ...pendingFilters, category: e.target.value })
-                }
-              />
-            </div>
-
-            <div className={styles.filterItem}>
-              <DatePicker
-                label="From Date"
-                name="startDate"
-                value={pendingFilters.startDate}
-                onChange={(e) =>
-                  setPendingFilters({ ...pendingFilters, startDate: e.target.value })
-                }
-              />
-            </div>
-
-            <div className={styles.filterItem}>
-              <DatePicker
-                label="To Date"
-                name="endDate"
-                value={pendingFilters.endDate}
-                onChange={(e) =>
-                  setPendingFilters({ ...pendingFilters, endDate: e.target.value })
                 }
               />
             </div>
@@ -946,7 +932,11 @@ export default function ParticipantsPage() {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         organizations={organizations}
-        onUploadComplete={loadParticipants}
+        onUploadStart={() => setIsUploading(true)}
+        onUploadComplete={() => {
+          setIsUploading(false);
+          loadParticipants();
+        }}
       />
     </DashboardLayout>
   );

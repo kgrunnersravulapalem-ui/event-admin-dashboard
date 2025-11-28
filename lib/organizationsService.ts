@@ -258,3 +258,63 @@ export const decrementOrgParticipantStats = async (
     console.error('Error decrementing org participant stats:', error);
   }
 };
+
+/**
+ * Bulk increment organization participant stats (for bulk operations)
+ */
+export const bulkIncrementOrgParticipantStats = async (
+  organizationName: string,
+  category: '3K' | '5K' | '10K',
+  count: number
+): Promise<void> => {
+  if (count <= 0) return;
+  
+  try {
+    const org = await getOrganizationByName(organizationName);
+    if (!org?.id) {
+      console.warn(`Organization not found: ${organizationName}`);
+      return;
+    }
+    
+    const orgDoc = doc(db, COLLECTION_NAME, org.id);
+    const categoryField = `category${category}`;
+    
+    await updateDoc(orgDoc, {
+      totalParticipants: increment(count),
+      [categoryField]: increment(count),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error bulk incrementing org participant stats:', error);
+  }
+};
+
+/**
+ * Bulk decrement organization participant stats (for bulk operations)
+ */
+export const bulkDecrementOrgParticipantStats = async (
+  organizationName: string,
+  category: '3K' | '5K' | '10K',
+  count: number
+): Promise<void> => {
+  if (count <= 0) return;
+  
+  try {
+    const org = await getOrganizationByName(organizationName);
+    if (!org?.id) {
+      console.warn(`Organization not found: ${organizationName}`);
+      return;
+    }
+    
+    const orgDoc = doc(db, COLLECTION_NAME, org.id);
+    const categoryField = `category${category}`;
+    
+    await updateDoc(orgDoc, {
+      totalParticipants: increment(-count),
+      [categoryField]: increment(-count),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error bulk decrementing org participant stats:', error);
+  }
+};

@@ -6,8 +6,15 @@
  * @module csvUploadService
  */
 
-import { addParticipant } from './participantsService';
+import { 
+  collection,
+  writeBatch,
+  serverTimestamp,
+  doc,
+} from 'firebase/firestore';
+import { db } from './firebase';
 import { Participant } from '@/types';
+import { bulkIncrementOrgParticipantStats } from './organizationsService';
 
 /**
  * Expected CSV headers (case-insensitive)
@@ -242,7 +249,8 @@ export const parseCSVContent = (content: string): CSVParseResult => {
 };
 
 /**
- * Upload participants in bulk
+ * Upload participants in bulk using Firestore batch operations
+ * This is more efficient than individual adds and reduces reads/writes
  */
 export const bulkUploadParticipants = async (
   participants: Omit<Participant, 'id' | 'createdAt' | 'updatedAt' | 'organization'>[],
@@ -250,34 +258,64 @@ export const bulkUploadParticipants = async (
   onProgress?: (current: number, total: number) => void
 ): Promise<BulkUploadResult> => {
   const errors: string[] = [];
-  let successCount = 0;
-  let failedCount = 0;
-
-  for (let i = 0; i < participants.length; i++) {
-    const participant = participants[i];
+  const BATCH_SIZE = 500; // Firestore batch limit
+  
+  try {
+    const participantsRef = collection(db, 'participants');
     
-    try {
-      await addParticipant({
-        ...participant,
-        organization,
+    // Track stats for bulk update
+    const statsMap: Map<string, number> = new Map();
+    
+    // Process in batches
+    for (let i = 0; i < participants.length; i += BATCH_SIZE) {
+      const batch = writeBatch(db);
+      const batchParticipants = participants.slice(i, i + BATCH_SIZE);
+      
+      batchParticipants.forEach((participant) => {
+        const docRef = doc(participantsRef);
+        batch.set(docRef, {
+          ...participant,
+          organization,
+          disabled: false,
+          swagKitGiven: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        
+        // Track category counts for stats
+        const category = participant.category;
+        statsMap.set(category, (statsMap.get(category) || 0) + 1);
       });
-      successCount++;
-    } catch (error) {
-      failedCount++;
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      errors.push(`Failed to add "${participant.name}": ${message}`);
+      
+      await batch.commit();
+      onProgress?.(Math.min(i + BATCH_SIZE, participants.length), participants.length);
     }
-
-    onProgress?.(i + 1, participants.length);
+    
+    // Update organization stats in bulk
+    const statsPromises = Array.from(statsMap.entries()).map(([category, count]) => 
+      bulkIncrementOrgParticipantStats(organization, category as '3K' | '5K' | '10K', count)
+    );
+    await Promise.all(statsPromises);
+    
+    return {
+      success: true,
+      totalProcessed: participants.length,
+      successCount: participants.length,
+      failedCount: 0,
+      errors: [],
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    errors.push(`Batch upload failed: ${message}`);
+    
+    return {
+      success: false,
+      totalProcessed: participants.length,
+      successCount: 0,
+      failedCount: participants.length,
+      errors,
+    };
   }
-
-  return {
-    success: failedCount === 0,
-    totalProcessed: participants.length,
-    successCount,
-    failedCount,
-    errors,
-  };
 };
 
 /**

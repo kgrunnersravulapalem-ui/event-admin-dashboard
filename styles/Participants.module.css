@@ -589,7 +589,6 @@
 /* Disabled Row */
 .disabledRow {
   background: #fafafa;
-  opacity: 0.7;
 }
 
 .disabledRow:hover {
@@ -599,4 +598,13 @@
 .disabledRow .participantName {
   text-decoration: line-through;
   color: #94a3b8;
+}
+
+.disabledRow .detail {
+  opacity: 0.6;
+}
+
+.disabledRow .checkboxCell,
+.disabledRow .actionsCell {
+  opacity: 1;
 }

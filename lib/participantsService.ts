@@ -26,10 +26,15 @@ import {
   QueryDocumentSnapshot,
   Query,
   Unsubscribe,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Participant } from '@/types';
-import { incrementOrgParticipantStats, decrementOrgParticipantStats } from './organizationsService';
+import { 
+  incrementOrgParticipantStats, 
+  decrementOrgParticipantStats,
+  bulkDecrementOrgParticipantStats 
+} from './organizationsService';
 
 const COLLECTION_NAME = 'participants';
 
@@ -379,7 +384,18 @@ export const validateParticipant = (
  * Export participants to CSV format
  */
 export const exportParticipantsToCSV = (participants: Participant[]): string => {
-  const headers = ['Name', 'Organization', 'Gender', 'Mobile Number', 'Category', 'Size', 'Enrollment Date'];
+  const headers = [
+    'Name',
+    'Organization',
+    'Gender',
+    'Mobile Number',
+    'Category',
+    'Size',
+    'Swag Kit Given',
+    'Status',
+    'Enrollment Date',
+    'Last Updated'
+  ];
   
   const rows = participants.map((p) => [
     p.name,
@@ -388,7 +404,10 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     p.mobileNumber,
     p.category,
     p.size,
+    p.swagKitGiven ? 'Yes' : 'No',
+    p.disabled ? 'Unenrolled' : 'Active',
     p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A',
+    p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'N/A',
   ]);
   
   const csvContent = [
@@ -469,6 +488,7 @@ export const subscribeToParticipantCount = (
 
 /**
  * Toggle participant enrollment status (unenroll/re-enroll)
+ * Note: Does not affect organization stats - unenrolled participants still count towards totals
  */
 export const toggleParticipantStatus = async (
   id: string,
@@ -482,21 +502,10 @@ export const toggleParticipantStatus = async (
       throw new Error('Participant not found');
     }
     
-    const data = snapshot.data();
-    
     await updateDoc(participantDoc, {
       disabled,
       updatedAt: serverTimestamp(),
     });
-    
-    // Update organization stats based on status change
-    if (disabled) {
-      // Unenrolling - decrement stats
-      await decrementOrgParticipantStats(data.organization, data.category);
-    } else {
-      // Re-enrolling - increment stats
-      await incrementOrgParticipantStats(data.organization, data.category);
-    }
   } catch (error) {
     console.error('Error toggling participant status:', error);
     throw new Error('Failed to update participant status. Please try again.');
@@ -504,52 +513,109 @@ export const toggleParticipantStatus = async (
 };
 
 /**
- * Bulk delete multiple participants
+ * Bulk delete multiple participants using batch operations
+ * Collects all participant data first, then deletes in batch, then updates stats
  */
 export const bulkDeleteParticipants = async (
-  ids: string[],
-  onProgress?: (current: number, total: number) => void
+  ids: string[]
 ): Promise<{ success: number; failed: number }> => {
-  let success = 0;
-  let failed = 0;
+  if (ids.length === 0) return { success: 0, failed: 0 };
   
-  for (let i = 0; i < ids.length; i++) {
-    try {
-      await deleteParticipant(ids[i]);
-      success++;
-    } catch (error) {
-      console.error(`Failed to delete participant ${ids[i]}:`, error);
-      failed++;
+  try {
+    // Step 1: Fetch all participant data first (for stats update)
+    const participantDataMap: Map<string, { organization: string; category: '3K' | '5K' | '10K' }> = new Map();
+    
+    const fetchPromises = ids.map(async (id) => {
+      const participantDoc = doc(db, COLLECTION_NAME, id);
+      const snapshot = await getDoc(participantDoc);
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        participantDataMap.set(id, {
+          organization: data.organization,
+          category: data.category,
+        });
+      }
+    });
+    
+    await Promise.all(fetchPromises);
+    
+    // Step 2: Delete all documents in batches (Firestore limit is 500 per batch)
+    const BATCH_SIZE = 500;
+    const validIds = Array.from(participantDataMap.keys());
+    
+    for (let i = 0; i < validIds.length; i += BATCH_SIZE) {
+      const batch = writeBatch(db);
+      const batchIds = validIds.slice(i, i + BATCH_SIZE);
+      
+      batchIds.forEach((id) => {
+        const docRef = doc(db, COLLECTION_NAME, id);
+        batch.delete(docRef);
+      });
+      
+      await batch.commit();
     }
-    onProgress?.(i + 1, ids.length);
+    
+    // Step 3: Update organization stats (aggregate by org and category)
+    const statsUpdates: Map<string, { org: string; category: '3K' | '5K' | '10K'; count: number }> = new Map();
+    
+    participantDataMap.forEach(({ organization, category }) => {
+      const key = `${organization}-${category}`;
+      const existing = statsUpdates.get(key);
+      if (existing) {
+        existing.count++;
+      } else {
+        statsUpdates.set(key, { org: organization, category, count: 1 });
+      }
+    });
+    
+    // Update stats for each org/category combination with correct count
+    const statsPromises = Array.from(statsUpdates.values()).map(({ org, category, count }) => 
+      bulkDecrementOrgParticipantStats(org, category, count)
+    );
+    
+    await Promise.all(statsPromises);
+    
+    return { success: validIds.length, failed: ids.length - validIds.length };
+  } catch (error) {
+    console.error('Bulk delete error:', error);
+    throw new Error('Failed to delete participants');
   }
-  
-  return { success, failed };
 };
 
 /**
- * Bulk toggle status for multiple participants
+ * Bulk toggle status for multiple participants using batch operations
+ * Note: Does not affect organization stats - unenrolled participants still count towards totals
  */
 export const bulkToggleParticipantStatus = async (
   ids: string[],
-  disabled: boolean,
-  onProgress?: (current: number, total: number) => void
+  disabled: boolean
 ): Promise<{ success: number; failed: number }> => {
-  let success = 0;
-  let failed = 0;
+  if (ids.length === 0) return { success: 0, failed: 0 };
   
-  for (let i = 0; i < ids.length; i++) {
-    try {
-      await toggleParticipantStatus(ids[i], disabled);
-      success++;
-    } catch (error) {
-      console.error(`Failed to toggle status for participant ${ids[i]}:`, error);
-      failed++;
+  try {
+    // Update all documents in batches (Firestore limit is 500 per batch)
+    const BATCH_SIZE = 500;
+    
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const batch = writeBatch(db);
+      const batchIds = ids.slice(i, i + BATCH_SIZE);
+      
+      batchIds.forEach((id) => {
+        const docRef = doc(db, COLLECTION_NAME, id);
+        batch.update(docRef, {
+          disabled,
+          updatedAt: serverTimestamp(),
+        });
+      });
+      
+      await batch.commit();
     }
-    onProgress?.(i + 1, ids.length);
+    
+    return { success: ids.length, failed: 0 };
+  } catch (error) {
+    console.error('Bulk toggle status error:', error);
+    throw new Error('Failed to update participant statuses');
   }
-  
-  return { success, failed };
 };
 
 /**

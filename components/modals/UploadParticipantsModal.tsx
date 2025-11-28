@@ -25,6 +25,7 @@ interface UploadParticipantsModalProps {
   isOpen: boolean;
   onClose: () => void;
   organizations: Organization[];
+  onUploadStart?: () => void;
   onUploadComplete: () => void;
 }
 
@@ -37,6 +38,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
   isOpen,
   onClose,
   organizations,
+  onUploadStart,
   onUploadComplete,
 }) => {
   const [selectedOrganization, setSelectedOrganization] = useState('');
@@ -111,6 +113,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
     if (!parseResult || !selectedOrganization) return;
 
     setStep('uploading');
+    onUploadStart?.();
 
     try {
       const result = await bulkUploadParticipants(
