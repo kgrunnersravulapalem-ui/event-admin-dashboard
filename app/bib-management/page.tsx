@@ -294,11 +294,11 @@ export default function BibManagementPage() {
             <h1 className={styles.title}>Bib Management</h1>
             <p className={styles.subtitle}>Generate and manage bib numbers by category</p>
           </div>
-          <div className={styles.readCounter}>
+          {/* <div className={styles.readCounter}>
             <span className={styles.readIcon}>🔥</span>
             <span className={styles.readCount}>{firestoreReads}</span>
             <span className={styles.readLabel}>reads</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Organization Selection */}

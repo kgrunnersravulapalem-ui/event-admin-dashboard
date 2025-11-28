@@ -42,6 +42,7 @@ export default function ParticipantsPage() {
   const [pendingFilters, setPendingFilters] = useState({
     organization: '',
     category: '',
+    swagKitGiven: undefined as boolean | undefined,
   });
   const [pendingSearchTerm, setPendingSearchTerm] = useState('');
   
@@ -49,6 +50,7 @@ export default function ParticipantsPage() {
   const [appliedFilters, setAppliedFilters] = useState({
     organization: '',
     category: '',
+    swagKitGiven: undefined as boolean | undefined,
   });
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   
@@ -108,6 +110,9 @@ export default function ParticipantsPage() {
     }
     if (appliedFilters.category) {
       apiFilters.category = appliedFilters.category;
+    }
+    if (appliedFilters.swagKitGiven !== undefined) {
+      apiFilters.swagKitGiven = appliedFilters.swagKitGiven;
     }
     if (appliedSearchTerm) {
       apiFilters.searchTerm = appliedSearchTerm;
@@ -544,11 +549,13 @@ export default function ParticipantsPage() {
     setPendingFilters({
       organization: '',
       category: '',
+      swagKitGiven: undefined,
     });
     setAppliedSearchTerm('');
     setAppliedFilters({
       organization: '',
       category: '',
+      swagKitGiven: undefined,
     });
     setCurrentPage(1);
   };
@@ -571,13 +578,15 @@ export default function ParticipantsPage() {
   const hasAppliedFilters = 
     appliedSearchTerm || 
     appliedFilters.organization || 
-    appliedFilters.category;
+    appliedFilters.category ||
+    appliedFilters.swagKitGiven !== undefined;
 
   // Check if pending filters differ from applied (show apply button)
   const hasPendingChanges = 
     pendingSearchTerm !== appliedSearchTerm ||
     pendingFilters.organization !== appliedFilters.organization ||
-    pendingFilters.category !== appliedFilters.category;
+    pendingFilters.category !== appliedFilters.category ||
+    pendingFilters.swagKitGiven !== appliedFilters.swagKitGiven;
 
   // Pagination calculations
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -601,11 +610,11 @@ export default function ParticipantsPage() {
             <h1 className={styles.title}>Participants</h1>
           </div>
           <div className={styles.headerActions}>
-            <div className={styles.readCounter}>
+            {/* <div className={styles.readCounter}>
               <span className={styles.readIcon}>🔥</span>
               <span className={styles.readCount}>{firestoreReads}</span>
               <span className={styles.readLabel}>reads</span>
-            </div>
+            </div> */}
             <Button variant="outline" onClick={() => setIsUploadModalOpen(true)}>
               Upload CSV
             </Button>
@@ -663,6 +672,30 @@ export default function ParticipantsPage() {
                 onChange={(e) =>
                   setPendingFilters({ ...pendingFilters, category: e.target.value })
                 }
+              />
+            </div>
+
+            <div className={styles.filterItem}>
+              <Dropdown
+                label="Swag Kit"
+                options={[
+                  { value: '', label: 'All' },
+                  { value: 'true', label: 'Received' },
+                  { value: 'false', label: 'Not Received' },
+                ]}
+                value={
+                  pendingFilters.swagKitGiven === undefined
+                    ? ''
+                    : pendingFilters.swagKitGiven
+                    ? 'true'
+                    : 'false'
+                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const swagKitGiven =
+                    value === '' ? undefined : value === 'true';
+                  setPendingFilters({ ...pendingFilters, swagKitGiven });
+                }}
               />
             </div>
 

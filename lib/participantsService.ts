@@ -124,6 +124,7 @@ export interface ParticipantFilters {
   startDate?: Date;
   endDate?: Date;
   searchTerm?: string;
+  swagKitGiven?: boolean; // Filter by swag kit status
 }
 
 export interface PaginatedResult {
@@ -194,6 +195,11 @@ const applyClientSideFilters = (
   // Apply gender filter if not already applied
   if (filters?.gender && appliedFilter !== 'gender') {
     result = result.filter(p => p.gender === filters.gender);
+  }
+  
+  // Apply swag kit filter
+  if (filters?.swagKitGiven !== undefined) {
+    result = result.filter(p => p.swagKitGiven === filters.swagKitGiven);
   }
   
   // Apply date range filters
