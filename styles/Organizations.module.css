@@ -73,7 +73,7 @@
 .listHeader {
   padding: 0.5rem 1rem;
   display: grid;
-  grid-template-columns: 2fr 1fr 60px 60px 60px 60px 150px;
+  grid-template-columns: 2fr 60px 60px 60px 60px 120px 150px;
   gap: 0.75rem;
   font-size: 0.6875rem;
   font-weight: 600;
@@ -91,7 +91,7 @@
 .orgCard {
   padding: 0.5rem 1rem;
   display: grid;
-  grid-template-columns: 2fr 1fr 60px 60px 60px 60px 150px;
+  grid-template-columns: 2fr 60px 60px 60px 60px 120px 150px;
   gap: 0.75rem;
   align-items: center;
   border-bottom: 1px solid #f1f5f9;
@@ -117,17 +117,24 @@
   margin: 0;
 }
 
-.orgCode {
-  font-size: 0.8125rem;
-  color: #64748b;
-  font-family: 'SF Mono', 'Consolas', monospace;
-  margin: 0;
-}
-
 .statValue {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--theme-primary-dark);
+  text-align: center;
+}
+
+.swagHeader {
+  text-align: center;
+}
+
+.swagValue {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #f43f5e;
+  /* background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%); */
+  /* padding: 0.25rem 0.5rem; */
+  /* border-radius: 4px; */
   text-align: center;
 }
 
@@ -159,13 +166,16 @@
 /* Tablet */
 @media (max-width: 768px) {
   .listHeader {
-    display: none;
+    grid-template-columns: 2fr 60px 60px 60px 60px 100px 100px;
+    display: grid;
   }
   
   .orgCard {
     grid-template-columns: 1fr;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
   }
   
   .orgCard::before {
@@ -174,10 +184,6 @@
   
   .orgName {
     font-size: 0.875rem;
-  }
-  
-  .orgCode {
-    font-size: 0.75rem;
   }
   
   .statValue {

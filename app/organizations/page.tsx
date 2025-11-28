@@ -20,6 +20,19 @@ import { toast } from 'react-hot-toast';
 import styles from '@/styles/Organizations.module.css';
 
 /**
+ * Format organization name to kebab-case with first letter capital
+ * e.g., "ABC Organization" -> "Abc-organization"
+ */
+const formatOrgName = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .split('-')
+    .map((word, index) => index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word)
+    .join('-');
+};
+
+/**
  * Organizations page component
  */
 export default function OrganizationsPage() {
@@ -89,6 +102,7 @@ export default function OrganizationsPage() {
           category3K: 0,
           category5K: 0,
           category10K: 0,
+          swagKitTaken: 0,
         }]);
       }
       
@@ -205,21 +219,21 @@ export default function OrganizationsPage() {
           <div className={styles.grid}>
             <div className={styles.listHeader}>
               <div>Name</div>
-              <div>Code</div>
               <div className={styles.statsHeader}>Total</div>
               <div className={styles.statsHeader}>3K</div>
               <div className={styles.statsHeader}>5K</div>
               <div className={styles.statsHeader}>10K</div>
-              <div>Actions</div>
+              <div className={styles.swagHeader}>🎁 Swag</div>
+              <div className={styles.statsHeader}>Actions</div>
             </div>
             {organizations.map((org) => (
               <div key={org.id} className={styles.orgCard}>
-                <div className={styles.orgName}>{org.name}</div>
-                <div className={styles.orgCode}>{org.code}</div>
+                <div className={styles.orgName}>{formatOrgName(org.name)}</div>
                 <div className={styles.statValue}>{org.totalParticipants || 0}</div>
                 <div className={styles.statValue}>{org.category3K || 0}</div>
                 <div className={styles.statValue}>{org.category5K || 0}</div>
                 <div className={styles.statValue}>{org.category10K || 0}</div>
+                <div className={styles.swagValue}>{org.swagKitTaken || 0}</div>
                 <div className={styles.orgActions}>
                   <Button
                     variant="secondary"

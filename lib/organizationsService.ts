@@ -109,6 +109,7 @@ export const getAllOrganizations = async (): Promise<Organization[]> => {
         category3K: data.category3K || 0,
         category5K: data.category5K || 0,
         category10K: data.category10K || 0,
+        swagKitTaken: data.swagKitTaken || 0,
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
       };
@@ -137,6 +138,7 @@ export const getOrganizationById = async (id: string): Promise<Organization | nu
         category3K: data.category3K || 0,
         category5K: data.category5K || 0,
         category10K: data.category10K || 0,
+        swagKitTaken: data.swagKitTaken || 0,
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
       };
@@ -316,5 +318,47 @@ export const bulkDecrementOrgParticipantStats = async (
     });
   } catch (error) {
     console.error('Error bulk decrementing org participant stats:', error);
+  }
+};
+
+/**
+ * Increment swag kit count for an organization
+ */
+export const incrementOrgSwagKitStats = async (organizationName: string): Promise<void> => {
+  try {
+    const org = await getOrganizationByName(organizationName);
+    if (!org?.id) {
+      console.warn(`Organization not found: ${organizationName}`);
+      return;
+    }
+
+    const orgDoc = doc(db, COLLECTION_NAME, org.id);
+    await updateDoc(orgDoc, {
+      swagKitTaken: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error incrementing org swag kit stats:', error);
+  }
+};
+
+/**
+ * Decrement swag kit count for an organization
+ */
+export const decrementOrgSwagKitStats = async (organizationName: string): Promise<void> => {
+  try {
+    const org = await getOrganizationByName(organizationName);
+    if (!org?.id) {
+      console.warn(`Organization not found: ${organizationName}`);
+      return;
+    }
+
+    const orgDoc = doc(db, COLLECTION_NAME, org.id);
+    await updateDoc(orgDoc, {
+      swagKitTaken: increment(-1),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error decrementing org swag kit stats:', error);
   }
 };
