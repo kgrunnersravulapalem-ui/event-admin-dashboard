@@ -276,6 +276,7 @@ const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant
     mobileNumber: data.mobileNumber,
     category: data.category,
     size: data.size,
+    bibNumber: data.bibNumber || undefined,
     disabled: data.disabled || false,
     swagKitGiven: data.swagKitGiven || false,
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
@@ -391,6 +392,7 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     'Mobile Number',
     'Category',
     'Size',
+    'Bib Number',
     'Swag Kit Given',
     'Status',
     'Enrollment Date',
@@ -404,6 +406,7 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     p.mobileNumber,
     p.category,
     p.size,
+    p.bibNumber || '',
     p.swagKitGiven ? 'Yes' : 'No',
     p.disabled ? 'Unenrolled' : 'Active',
     p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A',
@@ -635,5 +638,233 @@ export const toggleSwagKitStatus = async (
   } catch (error) {
     console.error('Error toggling swag kit status:', error);
     throw new Error('Failed to update swag kit status. Please try again.');
+  }
+};
+
+// ============================================
+// BIB MANAGEMENT FUNCTIONS
+// ============================================
+
+/**
+ * Check if a bib number is already assigned to any participant
+ * Returns the participant with the bib number if found, null otherwise
+ */
+export const checkBibNumberDuplicate = async (
+  bibNumber: string,
+  excludeParticipantId?: string
+): Promise<Participant | null> => {
+  try {
+    const participantsRef = getParticipantsCollection();
+    const q = query(participantsRef, where('bibNumber', '==', bibNumber));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    // Filter out the excluded participant (for edit scenarios)
+    const docs = querySnapshot.docs.filter(doc => doc.id !== excludeParticipantId);
+    
+    if (docs.length === 0) {
+      return null;
+    }
+    
+    return docToParticipant(docs[0]);
+  } catch (error) {
+    console.error('Error checking bib duplicate:', error);
+    throw new Error('Failed to check bib number');
+  }
+};
+
+/**
+ * Get participants by organization who don't have bib numbers assigned
+ * Optionally filter by category
+ */
+export const getParticipantsWithoutBibs = async (
+  organization: string,
+  category?: string
+): Promise<Participant[]> => {
+  try {
+    const participantsRef = getParticipantsCollection();
+    let q;
+    
+    if (category) {
+      q = query(
+        participantsRef,
+        where('organization', '==', organization),
+        where('category', '==', category),
+        orderBy('createdAt', 'asc')
+      );
+    } else {
+      q = query(
+        participantsRef,
+        where('organization', '==', organization),
+        orderBy('createdAt', 'asc')
+      );
+    }
+    
+    const querySnapshot = await getDocs(q);
+    
+    // Filter to only those without bib numbers
+    return querySnapshot.docs
+      .map(doc => docToParticipant(doc))
+      .filter(p => !p.bibNumber);
+  } catch (error) {
+    console.error('Error fetching participants without bibs:', error);
+    throw new Error('Failed to fetch participants');
+  }
+};
+
+/**
+ * Get all participants for an organization (with and without bibs)
+ * Optionally filter by category
+ */
+export const getParticipantsByOrganization = async (
+  organization: string,
+  category?: string
+): Promise<Participant[]> => {
+  try {
+    const participantsRef = getParticipantsCollection();
+    let q;
+    
+    if (category) {
+      q = query(
+        participantsRef,
+        where('organization', '==', organization),
+        where('category', '==', category),
+        orderBy('createdAt', 'asc')
+      );
+    } else {
+      q = query(
+        participantsRef,
+        where('organization', '==', organization),
+        orderBy('createdAt', 'asc')
+      );
+    }
+    
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => docToParticipant(doc));
+  } catch (error) {
+    console.error('Error fetching participants by organization:', error);
+    throw new Error('Failed to fetch participants');
+  }
+};
+
+/**
+ * Generate and assign bib numbers to participants without bibs
+ * Returns the number of bibs assigned
+ */
+export const generateBibNumbers = async (
+  participantIds: string[],
+  prefix: string,
+  startNumber: number
+): Promise<{ success: number; failed: number }> => {
+  if (participantIds.length === 0) {
+    return { success: 0, failed: 0 };
+  }
+  
+  try {
+    const BATCH_SIZE = 500;
+    let currentNumber = startNumber;
+    let success = 0;
+    let failed = 0;
+    
+    // Process in batches
+    for (let i = 0; i < participantIds.length; i += BATCH_SIZE) {
+      const batch = writeBatch(db);
+      const batchIds = participantIds.slice(i, i + BATCH_SIZE);
+      
+      for (const id of batchIds) {
+        const bibNumber = `${prefix}${currentNumber}`;
+        
+        // Check for duplicate before assigning
+        const existingParticipant = await checkBibNumberDuplicate(bibNumber);
+        if (existingParticipant) {
+          console.warn(`Bib ${bibNumber} already exists, skipping`);
+          failed++;
+          currentNumber++;
+          continue;
+        }
+        
+        const docRef = doc(db, COLLECTION_NAME, id);
+        batch.update(docRef, {
+          bibNumber,
+          updatedAt: serverTimestamp(),
+        });
+        
+        success++;
+        currentNumber++;
+      }
+      
+      await batch.commit();
+    }
+    
+    return { success, failed };
+  } catch (error) {
+    console.error('Error generating bib numbers:', error);
+    throw new Error('Failed to generate bib numbers');
+  }
+};
+
+/**
+ * Update a single participant's bib number
+ * Returns duplicate participant if bib already exists
+ */
+export const updateBibNumber = async (
+  participantId: string,
+  bibNumber: string | null
+): Promise<{ success: boolean; duplicateParticipant?: Participant }> => {
+  try {
+    // If clearing bib number, just update
+    if (!bibNumber) {
+      const participantDoc = doc(db, COLLECTION_NAME, participantId);
+      await updateDoc(participantDoc, {
+        bibNumber: null,
+        updatedAt: serverTimestamp(),
+      });
+      return { success: true };
+    }
+    
+    // Check for duplicates
+    const duplicate = await checkBibNumberDuplicate(bibNumber, participantId);
+    if (duplicate) {
+      return { success: false, duplicateParticipant: duplicate };
+    }
+    
+    // Update bib number
+    const participantDoc = doc(db, COLLECTION_NAME, participantId);
+    await updateDoc(participantDoc, {
+      bibNumber,
+      updatedAt: serverTimestamp(),
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating bib number:', error);
+    throw new Error('Failed to update bib number');
+  }
+};
+
+/**
+ * Get all existing bib numbers (for validation)
+ */
+export const getAllBibNumbers = async (): Promise<Map<string, Participant>> => {
+  try {
+    const participantsRef = getParticipantsCollection();
+    const querySnapshot = await getDocs(participantsRef);
+    
+    const bibMap = new Map<string, Participant>();
+    querySnapshot.docs.forEach(doc => {
+      const participant = docToParticipant(doc);
+      if (participant.bibNumber) {
+        bibMap.set(participant.bibNumber, participant);
+      }
+    });
+    
+    return bibMap;
+  } catch (error) {
+    console.error('Error fetching all bib numbers:', error);
+    throw new Error('Failed to fetch bib numbers');
   }
 };

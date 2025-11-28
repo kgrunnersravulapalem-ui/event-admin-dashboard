@@ -677,6 +677,7 @@ export default function ParticipantsPage() {
                 <div>Gender</div>
                 <div>Category</div>
                 <div>Size</div>
+                <div>Bib</div>
                 <div>Swag Kit</div>
                 <div>Actions</div>
               </div>
@@ -699,6 +700,13 @@ export default function ParticipantsPage() {
                   <div className={styles.detail}>{participant.gender}</div>
                   <div className={styles.detail}>{participant.category}</div>
                   <div className={styles.detail}>{participant.size}</div>
+                  <div className={styles.bibCell}>
+                    {participant.bibNumber ? (
+                      <span className={styles.bibBadge}>{participant.bibNumber}</span>
+                    ) : (
+                      <span className={styles.noBib}>-</span>
+                    )}
+                  </div>
                   <div className={styles.swagKitCell}>
                     <label className={styles.toggleSwitch}>
                       <input

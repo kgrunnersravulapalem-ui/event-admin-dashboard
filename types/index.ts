@@ -13,6 +13,7 @@ export interface Participant {
   mobileNumber: string;
   category: '3K' | '5K' | '10K';
   size: string;
+  bibNumber?: string; // Unique bib number for the participant (e.g., "RUN-101")
   disabled?: boolean; // If true, participant is unenrolled but not deleted
   swagKitGiven?: boolean; // If true, swag kit has been given to participant
   createdAt?: Date;
