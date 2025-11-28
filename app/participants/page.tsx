@@ -663,6 +663,8 @@ export default function ParticipantsPage() {
               onBulkDelete={handleBulkDelete}
               onBulkToggleStatus={handleBulkToggleStatus}
               isBulkDeleting={isBulkDeleting}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
             />
 
             <ParticipantsPagination

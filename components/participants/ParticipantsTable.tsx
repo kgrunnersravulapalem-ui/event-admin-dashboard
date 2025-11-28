@@ -15,6 +15,8 @@ interface ParticipantsTableProps {
     onBulkDelete: () => void;
     onBulkToggleStatus: (disable: boolean) => void;
     isBulkDeleting: boolean;
+    currentPage: number;
+    itemsPerPage: number;
 }
 
 const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
@@ -29,8 +31,13 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
     onBulkDelete,
     onBulkToggleStatus,
     isBulkDeleting,
+    currentPage,
+    itemsPerPage,
 }) => {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+    // Calculate starting serial number based on pagination
+    const startingSerialNumber = (currentPage - 1) * itemsPerPage;
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -94,6 +101,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                             className={styles.checkbox}
                         />
                     </div>
+                    <div>S.No</div>
                     <div>Name</div>
                     <div>Organization</div>
                     <div>Mobile</div>
@@ -104,7 +112,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                     <div>Swag Kit</div>
                     <div>Actions</div>
                 </div>
-                {participants.map((participant: Participant) => (
+                {participants.map((participant: Participant, index) => (
                     <div
                         key={participant.id}
                         className={`${styles.participantCard} ${participant.disabled ? styles.disabledRow : ''}`}
@@ -117,6 +125,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                                 className={styles.checkbox}
                             />
                         </div>
+                        <div className={styles.serialNumber}>{startingSerialNumber + index + 1}</div>
                         <div className={styles.participantName}>{participant.name}</div>
                         <div className={styles.organization}>{participant.organization}</div>
                         <div className={styles.detail}>{participant.mobileNumber}</div>

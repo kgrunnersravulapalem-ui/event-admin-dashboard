@@ -174,12 +174,12 @@
 .participantCard {
   padding: 0.5rem 1rem;
   display: grid;
-  grid-template-columns: 40px 2fr 1.5fr 1fr 0.8fr 0.8fr 0.6fr 0.7fr 70px 50px;
+  grid-template-columns: 40px 50px 2fr 1.5fr 1fr 0.8fr 0.8fr 0.6fr 0.7fr 70px 50px;
   gap: 0.5rem;
   align-items: center;
   border-bottom: 1px solid var(--theme-bg-tertiary);
   font-size: 0.8125rem;
-  min-width: 950px;
+  min-width: 1000px;
   transition: background-color 0.15s;
 }
 
@@ -289,6 +289,7 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -336,7 +337,7 @@
 .listHeader {
   padding: 0.625rem 1rem;
   display: grid;
-  grid-template-columns: 40px 2fr 1.5fr 1fr 0.8fr 0.8fr 0.6fr 0.7fr 70px 50px;
+  grid-template-columns: 40px 50px 2fr 1.5fr 1fr 0.8fr 0.8fr 0.6fr 0.7fr 70px 50px;
   gap: 0.5rem;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -345,7 +346,7 @@
   letter-spacing: 0.5px;
   background: #f1f5f9;
   border-bottom: 2px solid #e2e8f0;
-  min-width: 950px;
+  min-width: 1000px;
 }
 
 /* Loading & Empty States */
@@ -633,20 +634,20 @@
   background-color: white;
   border-radius: 50%;
   transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.15),
     0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
-.toggleInput:checked + .toggleSlider {
+.toggleInput:checked+.toggleSlider {
   background-color: var(--theme-primary, #14b8a6);
 }
 
-.toggleInput:checked + .toggleSlider::before {
+.toggleInput:checked+.toggleSlider::before {
   transform: translateX(18px);
 }
 
-.toggleInput:focus + .toggleSlider {
+.toggleInput:focus+.toggleSlider {
   box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb, 20, 184, 166), 0.3);
 }
 
@@ -654,7 +655,7 @@
   width: 22px;
 }
 
-.toggleSwitch:active .toggleInput:checked + .toggleSlider::before {
+.toggleSwitch:active .toggleInput:checked+.toggleSlider::before {
   transform: translateX(14px);
 }
 
@@ -679,4 +680,12 @@
 .disabledRow .checkboxCell,
 .disabledRow .actionsCell {
   opacity: 1;
+}
+
+/* Serial Number Column */
+.serialNumber {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
 }
