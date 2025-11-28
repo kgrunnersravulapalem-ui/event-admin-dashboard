@@ -21,6 +21,7 @@ import {
   ParticipantFilters,
 } from '@/lib/participantsService';
 import { getAllOrganizations } from '@/lib/organizationsService';
+import UploadParticipantsModal from '@/components/modals/UploadParticipantsModal';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Participants.module.css';
 
@@ -65,6 +66,7 @@ export default function ParticipantsPage() {
     size: '',
   });
   const [isExporting, setIsExporting] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   /**
    * Build filters object for API call (uses applied filters only)
@@ -355,9 +357,14 @@ export default function ParticipantsPage() {
           <div>
             <h1 className={styles.title}>Participants</h1>
           </div>
-          <Button onClick={handleExport} disabled={totalCount === 0 || isExporting}>
-            {isExporting ? 'Exporting...' : 'Export CSV'}
-          </Button>
+          <div className={styles.headerActions}>
+            <Button variant="outline" onClick={() => setIsUploadModalOpen(true)}>
+              Upload CSV
+            </Button>
+            <Button onClick={handleExport} disabled={totalCount === 0 || isExporting}>
+              {isExporting ? 'Exporting...' : 'Export CSV'}
+            </Button>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -666,6 +673,14 @@ export default function ParticipantsPage() {
           />
         </div>
       </Modal>
+
+      {/* Upload Modal */}
+      <UploadParticipantsModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        organizations={organizations}
+        onUploadComplete={loadParticipants}
+      />
     </DashboardLayout>
   );
 }

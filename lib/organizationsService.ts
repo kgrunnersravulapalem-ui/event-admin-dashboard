@@ -17,6 +17,8 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  where,
+  increment,
   CollectionReference,
   DocumentData,
   Timestamp,
@@ -110,6 +112,10 @@ export const getAllOrganizations = async (): Promise<Organization[]> => {
         id: doc.id,
         name: data.name,
         code: data.code,
+        totalParticipants: data.totalParticipants || 0,
+        category3K: data.category3K || 0,
+        category5K: data.category5K || 0,
+        category10K: data.category10K || 0,
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
       };
@@ -134,6 +140,10 @@ export const getOrganizationById = async (id: string): Promise<Organization | nu
         id: docSnap.id,
         name: data.name,
         code: data.code,
+        totalParticipants: data.totalParticipants || 0,
+        category3K: data.category3K || 0,
+        category5K: data.category5K || 0,
+        category10K: data.category10K || 0,
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
       };
@@ -167,4 +177,91 @@ export const validateOrganization = (
   }
   
   return null;
+};
+
+/**
+ * Get organization by name
+ */
+export const getOrganizationByName = async (name: string): Promise<Organization | null> => {
+  try {
+    const orgsRef = getOrganizationsCollection();
+    const q = query(orgsRef, where('name', '==', name));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    const docSnap = querySnapshot.docs[0];
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      name: data.name,
+      code: data.code,
+      totalParticipants: data.totalParticipants || 0,
+      category3K: data.category3K || 0,
+      category5K: data.category5K || 0,
+      category10K: data.category10K || 0,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
+      updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
+    };
+  } catch (error) {
+    console.error('Error fetching organization by name:', error);
+    return null;
+  }
+};
+
+/**
+ * Increment organization participant stats when adding a participant
+ */
+export const incrementOrgParticipantStats = async (
+  organizationName: string,
+  category: '3K' | '5K' | '10K'
+): Promise<void> => {
+  try {
+    const org = await getOrganizationByName(organizationName);
+    if (!org?.id) {
+      console.warn(`Organization not found: ${organizationName}`);
+      return;
+    }
+    
+    const orgDoc = doc(db, COLLECTION_NAME, org.id);
+    const categoryField = `category${category}`;
+    
+    await updateDoc(orgDoc, {
+      totalParticipants: increment(1),
+      [categoryField]: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error incrementing org participant stats:', error);
+    // Don't throw error to avoid blocking participant creation
+  }
+};
+
+/**
+ * Decrement organization participant stats when deleting a participant
+ */
+export const decrementOrgParticipantStats = async (
+  organizationName: string,
+  category: '3K' | '5K' | '10K'
+): Promise<void> => {
+  try {
+    const org = await getOrganizationByName(organizationName);
+    if (!org?.id) {
+      console.warn(`Organization not found: ${organizationName}`);
+      return;
+    }
+    
+    const orgDoc = doc(db, COLLECTION_NAME, org.id);
+    const categoryField = `category${category}`;
+    
+    await updateDoc(orgDoc, {
+      totalParticipants: increment(-1),
+      [categoryField]: increment(-1),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error decrementing org participant stats:', error);
+  }
 };

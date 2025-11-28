@@ -30,6 +30,7 @@ import {
 import { db } from './firebase';
 import { Participant } from '@/types';
 import { incrementParticipantStats, decrementParticipantStats } from './statsService';
+import { incrementOrgParticipantStats, decrementOrgParticipantStats } from './organizationsService';
 
 const COLLECTION_NAME = 'participants';
 
@@ -55,8 +56,11 @@ export const addParticipant = async (
       updatedAt: serverTimestamp(),
     });
     
-    // Update stats
+    // Update global stats
     await incrementParticipantStats(participant.category);
+    
+    // Update organization stats
+    await incrementOrgParticipantStats(participant.organization, participant.category);
     
     return docRef.id;
   } catch (error) {
@@ -98,8 +102,11 @@ export const deleteParticipant = async (id: string): Promise<void> => {
       const data = snapshot.data();
       await deleteDoc(participantDoc);
       
-      // Update stats
+      // Update global stats
       await decrementParticipantStats(data.category);
+      
+      // Update organization stats
+      await decrementOrgParticipantStats(data.organization, data.category);
     } else {
       throw new Error('Participant not found');
     }

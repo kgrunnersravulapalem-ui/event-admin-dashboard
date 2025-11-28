@@ -183,12 +183,20 @@ export default function OrganizationsPage() {
             <div className={styles.listHeader}>
               <div>Name</div>
               <div>Code</div>
+              <div className={styles.statsHeader}>Total</div>
+              <div className={styles.statsHeader}>3K</div>
+              <div className={styles.statsHeader}>5K</div>
+              <div className={styles.statsHeader}>10K</div>
               <div>Actions</div>
             </div>
             {organizations.map((org) => (
               <div key={org.id} className={styles.orgCard}>
                 <div className={styles.orgName}>{org.name}</div>
                 <div className={styles.orgCode}>{org.code}</div>
+                <div className={styles.statValue}>{org.totalParticipants || 0}</div>
+                <div className={styles.statValue}>{org.category3K || 0}</div>
+                <div className={styles.statValue}>{org.category5K || 0}</div>
+                <div className={styles.statValue}>{org.category10K || 0}</div>
                 <div className={styles.orgActions}>
                   <Button
                     variant="secondary"

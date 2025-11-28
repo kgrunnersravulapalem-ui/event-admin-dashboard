@@ -26,6 +26,12 @@
   margin: 0;
 }
 
+.headerActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .subtitle {
   font-size: 0.875rem;
   font-weight: 500;
