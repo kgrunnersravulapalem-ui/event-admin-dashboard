@@ -55,7 +55,7 @@ export default function ParticipantsPage() {
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -739,6 +739,7 @@ export default function ParticipantsPage() {
                   onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
                   className={styles.itemsPerPageSelect}
                 >
+                  <option value={10}>10</option>
                   <option value={25}>25</option>
                   <option value={50}>50</option>
                   <option value={100}>100</option>
