@@ -135,36 +135,33 @@ export default function ParticipantsPage() {
   }, []);
 
   /**
-   * Subscribe to real-time participant count updates
-   * This will trigger a reload when new participants are added
-   * Disabled during bulk uploads to prevent excessive reads
+   * Real-time subscription disabled to prevent unnecessary reloads
+   * The subscription was triggering on EVERY participant update (not just additions),
+   * causing wasteful Firestore reads. With optimistic updates, we don't need this.
+   * 
+   * If you need to detect new participants added by other users, consider:
+   * 1. Manual refresh button
+   * 2. Periodic polling (e.g., every 30 seconds)
+   * 3. More selective subscription (only on additions, not updates)
    */
-  useEffect(() => {
-    let isFirstCallback = true;
-
-    const unsubscribe = subscribeToParticipantCount(
-      (newCount) => {
-        // Skip updates during bulk upload to save reads
-        if (isUploading) return;
-
-        // Update total count from subscription
-        setTotalCount(newCount);
-
-        // Skip the first callback - let the pagination effect handle initial load
-        if (isFirstCallback) {
-          isFirstCallback = false;
-          return;
-        }
-
-        loadParticipants();
-      },
-      (error) => {
-        console.error('Real-time subscription error:', error);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [totalCount, appliedFilters, appliedSearchTerm, currentPage, itemsPerPage, isUploading]);
+  // useEffect(() => {
+  //   let isFirstCallback = true;
+  //   const unsubscribe = subscribeToParticipantCount(
+  //     (newCount) => {
+  //       if (isUploading) return;
+  //       setTotalCount(newCount);
+  //       if (isFirstCallback) {
+  //         isFirstCallback = false;
+  //         return;
+  //       }
+  //       loadParticipants();
+  //     },
+  //     (error) => {
+  //       console.error('Real-time subscription error:', error);
+  //     }
+  //   );
+  //   return () => unsubscribe();
+  // }, [totalCount, appliedFilters, appliedSearchTerm, currentPage, itemsPerPage, isUploading]);
 
   /**
    * Load participants when applied filters or pagination changes
@@ -424,12 +421,21 @@ export default function ParticipantsPage() {
     if (!participant.id) return;
 
     const action = participant.disabled ? 're-enroll' : 'unenroll';
+    const newStatus = !participant.disabled;
+
+    // Optimistic update
+    setParticipants(prev => prev.map(p =>
+      p.id === participant.id ? { ...p, disabled: newStatus } : p
+    ));
 
     try {
-      await toggleParticipantStatus(participant.id, !participant.disabled);
+      await toggleParticipantStatus(participant.id, newStatus);
       toast.success(`Participant ${action}ed successfully`);
-      loadParticipants();
     } catch (error: unknown) {
+      // Rollback on error
+      setParticipants(prev => prev.map(p =>
+        p.id === participant.id ? { ...p, disabled: !newStatus } : p
+      ));
       const message = error instanceof Error ? error.message : `Failed to ${action} participant`;
       toast.error(message);
     }
@@ -470,6 +476,7 @@ export default function ParticipantsPage() {
 
     // Store current state for potential rollback
     const previousParticipants = [...participants];
+    const previousSelectedIds = new Set(selectedIds);
     const idsToToggle = Array.from(selectedIds);
 
     // Optimistic update - update UI immediately
@@ -486,12 +493,15 @@ export default function ParticipantsPage() {
       }
       if (result.failed > 0) {
         toast.error(`Failed to ${action} ${result.failed} participant(s)`);
-        // Reload to get accurate state if some failed
+        // Partial rollback - only rollback failed items
+        // Since we don't know which ones failed, we need to reload
         loadParticipants();
+        setSelectedIds(new Set());
       }
     } catch (error) {
       // Rollback on error
       setParticipants(previousParticipants);
+      setSelectedIds(previousSelectedIds);
       toast.error(`Bulk ${action} failed`);
     }
   };
