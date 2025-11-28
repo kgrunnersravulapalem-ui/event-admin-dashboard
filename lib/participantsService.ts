@@ -27,13 +27,15 @@ import {
   Query,
   Unsubscribe,
   writeBatch,
+  startAfter,
+  limit,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Participant } from '@/types';
-import { 
-  incrementOrgParticipantStats, 
+import {
+  incrementOrgParticipantStats,
   decrementOrgParticipantStats,
-  bulkDecrementOrgParticipantStats 
+  bulkDecrementOrgParticipantStats
 } from './organizationsService';
 
 const COLLECTION_NAME = 'participants';
@@ -53,16 +55,16 @@ export const addParticipant = async (
 ): Promise<string> => {
   try {
     const participantsRef = getParticipantsCollection();
-    
+
     const docRef = await addDoc(participantsRef, {
       ...participant,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    
+
     // Update organization stats
     await incrementOrgParticipantStats(participant.organization, participant.category);
-    
+
     return docRef.id;
   } catch (error) {
     console.error('Error adding participant:', error);
@@ -79,7 +81,7 @@ export const updateParticipant = async (
 ): Promise<void> => {
   try {
     const participantDoc = doc(db, COLLECTION_NAME, id);
-    
+
     await updateDoc(participantDoc, {
       ...data,
       updatedAt: serverTimestamp(),
@@ -98,11 +100,11 @@ export const deleteParticipant = async (id: string): Promise<void> => {
     // Get participant to know category before deleting
     const participantDoc = doc(db, COLLECTION_NAME, id);
     const snapshot = await getDoc(participantDoc);
-    
+
     if (snapshot.exists()) {
       const data = snapshot.data();
       await deleteDoc(participantDoc);
-      
+
       // Update organization stats
       await decrementOrgParticipantStats(data.organization, data.category);
     } else {
@@ -129,9 +131,8 @@ export interface ParticipantFilters {
 
 export interface PaginatedResult {
   participants: Participant[];
-  totalCount: number;
-  currentPage: number;
-  totalPages: number;
+  lastVisible: string | null; // ID of the last document
+  hasMore: boolean;
 }
 
 /**
@@ -143,7 +144,7 @@ const buildFilteredQuery = (
 ): Query<DocumentData> => {
   // Firestore has limitations on compound queries
   // We'll use the most selective filter for the query and apply others client-side
-  
+
   // Priority: organization > category > gender (as these are equality filters)
   if (filters?.organization) {
     return query(
@@ -152,7 +153,7 @@ const buildFilteredQuery = (
       orderBy('createdAt', 'desc')
     );
   }
-  
+
   if (filters?.category) {
     return query(
       baseRef,
@@ -160,7 +161,7 @@ const buildFilteredQuery = (
       orderBy('createdAt', 'desc')
     );
   }
-  
+
   if (filters?.gender) {
     return query(
       baseRef,
@@ -168,7 +169,7 @@ const buildFilteredQuery = (
       orderBy('createdAt', 'desc')
     );
   }
-  
+
   return query(baseRef, orderBy('createdAt', 'desc'));
 };
 
@@ -181,27 +182,27 @@ const applyClientSideFilters = (
   appliedFilter?: 'organization' | 'category' | 'gender'
 ): Participant[] => {
   let result = [...participants];
-  
+
   // Apply category filter if not already applied
   if (filters?.category && appliedFilter !== 'category') {
     result = result.filter(p => p.category === filters.category);
   }
-  
+
   // Apply organization filter if not already applied
   if (filters?.organization && appliedFilter !== 'organization') {
     result = result.filter(p => p.organization === filters.organization);
   }
-  
+
   // Apply gender filter if not already applied
   if (filters?.gender && appliedFilter !== 'gender') {
     result = result.filter(p => p.gender === filters.gender);
   }
-  
+
   // Apply swag kit filter
   if (filters?.swagKitGiven !== undefined) {
     result = result.filter(p => p.swagKitGiven === filters.swagKitGiven);
   }
-  
+
   // Apply date range filters
   if (filters?.startDate) {
     const startDate = new Date(filters.startDate);
@@ -213,7 +214,7 @@ const applyClientSideFilters = (
       return enrollDate >= startDate;
     });
   }
-  
+
   if (filters?.endDate) {
     const endDate = new Date(filters.endDate);
     endDate.setHours(23, 59, 59, 999);
@@ -222,7 +223,7 @@ const applyClientSideFilters = (
       return new Date(p.createdAt) <= endDate;
     });
   }
-  
+
   // Apply search term filter
   if (filters?.searchTerm) {
     const term = filters.searchTerm.toLowerCase();
@@ -231,37 +232,73 @@ const applyClientSideFilters = (
       p.mobileNumber.includes(term)
     );
   }
-  
+
   return result;
 };
 
 /**
- * Get paginated participants with filters
- * Uses offset-based pagination for better UX with arbitrary page navigation
+ * Get paginated participants with filters using cursors
+ * Uses cursor-based pagination for performance
  */
 export const getPaginatedParticipants = async (
   filters?: ParticipantFilters,
-  page: number = 1,
+  lastVisibleId?: string | null,
   pageSize: number = 25
 ): Promise<PaginatedResult> => {
   try {
-    // Get all filtered participants first
-    const allParticipants = await getAllParticipants(filters);
-    const totalCount = allParticipants.length;
-    const totalPages = Math.ceil(totalCount / pageSize);
-    
-    // Calculate offset
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    
-    // Slice for current page
-    const participants = allParticipants.slice(startIndex, endIndex);
-    
+    const participantsRef = getParticipantsCollection();
+
+    // Determine which filter to apply at Firestore level
+    // Priority: organization > category > gender
+    let appliedFilter: 'organization' | 'category' | 'gender' | undefined;
+    let constraints: any[] = [orderBy('createdAt', 'desc')];
+
+    if (filters?.organization) {
+      constraints = [where('organization', '==', filters.organization), orderBy('createdAt', 'desc')];
+      appliedFilter = 'organization';
+    } else if (filters?.category) {
+      constraints = [where('category', '==', filters.category), orderBy('createdAt', 'desc')];
+      appliedFilter = 'category';
+    } else if (filters?.gender) {
+      constraints = [where('gender', '==', filters.gender), orderBy('createdAt', 'desc')];
+      appliedFilter = 'gender';
+    }
+
+    // Add cursor if provided
+    if (lastVisibleId) {
+      const lastDocRef = doc(db, COLLECTION_NAME, lastVisibleId);
+      const lastDocSnap = await getDoc(lastDocRef);
+      if (lastDocSnap.exists()) {
+        constraints.push(startAfter(lastDocSnap));
+      }
+    }
+
+    // Add limit (fetch one extra to check if there are more)
+    constraints.push(limit(pageSize + 1));
+
+    const q = query(participantsRef, ...constraints);
+    const querySnapshot = await getDocs(q);
+
+    let docs = querySnapshot.docs;
+    const hasMore = docs.length > pageSize;
+
+    if (hasMore) {
+      docs = docs.slice(0, pageSize);
+    }
+
+    let participants = docs.map(doc => docToParticipant(doc));
+
+    // Apply client-side filters
+    // Note: This is tricky with cursor pagination because we might filter out all results in the current page
+    // Ideally, we should apply all filters in Firestore, but we are limited by composite indexes
+    participants = applyClientSideFilters(participants, filters, appliedFilter);
+
+    const lastVisible = docs.length > 0 ? docs[docs.length - 1].id : null;
+
     return {
       participants,
-      totalCount,
-      currentPage: page,
-      totalPages,
+      lastVisible,
+      hasMore,
     };
   } catch (error) {
     console.error('Error fetching paginated participants:', error);
@@ -295,21 +332,21 @@ export const getAllParticipants = async (
 ): Promise<Participant[]> => {
   try {
     const participantsRef = getParticipantsCollection();
-    
+
     // Determine which filter to apply at Firestore level
     let appliedFilter: 'organization' | 'category' | 'gender' | undefined;
     if (filters?.organization) appliedFilter = 'organization';
     else if (filters?.category) appliedFilter = 'category';
     else if (filters?.gender) appliedFilter = 'gender';
-    
+
     const q = buildFilteredQuery(participantsRef, filters);
     const querySnapshot = await getDocs(q);
-    
+
     let participants = querySnapshot.docs.map(doc => docToParticipant(doc));
-    
+
     // Apply client-side filters
     participants = applyClientSideFilters(participants, filters, appliedFilter);
-    
+
     return participants;
   } catch (error) {
     console.error('Error fetching participants:', error);
@@ -324,7 +361,7 @@ export const getParticipantById = async (id: string): Promise<Participant | null
   try {
     const participantDoc = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(participantDoc);
-    
+
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
@@ -339,7 +376,7 @@ export const getParticipantById = async (id: string): Promise<Participant | null
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
       };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error fetching participant:', error);
@@ -356,34 +393,34 @@ export const validateParticipant = (
   if (!participant.organization || participant.organization.trim() === '') {
     return 'Organization is required';
   }
-  
+
   if (!participant.name || participant.name.trim() === '') {
     return 'Name is required';
   }
-  
+
   if (!participant.gender) {
     return 'Gender is required';
   }
-  
+
   if (!participant.mobileNumber || participant.mobileNumber.trim() === '') {
     return 'Mobile number is required';
   }
-  
+
   // Basic mobile number validation (10-15 digits)
   const mobileRegex = /^[0-9]{10,15}$/;
   const cleanedNumber = participant.mobileNumber.replace(/[\s\-\(\)]/g, '');
   if (!mobileRegex.test(cleanedNumber)) {
     return 'Please enter a valid mobile number (10-15 digits)';
   }
-  
+
   if (!participant.category) {
     return 'Category is required';
   }
-  
+
   if (!participant.size || participant.size.trim() === '') {
     return 'Size is required';
   }
-  
+
   return null;
 };
 
@@ -404,7 +441,7 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     'Enrollment Date',
     'Last Updated'
   ];
-  
+
   const rows = participants.map((p) => [
     p.name,
     p.organization,
@@ -418,12 +455,12 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A',
     p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'N/A',
   ]);
-  
+
   const csvContent = [
     headers.join(','),
     ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
   ].join('\n');
-  
+
   return csvContent;
 };
 
@@ -433,7 +470,7 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
 export const downloadCSV = (csvContent: string, filename: string): void => {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
-  
+
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -456,7 +493,7 @@ export const subscribeToParticipants = (
 ): Unsubscribe => {
   const participantsRef = getParticipantsCollection();
   const q = query(participantsRef, orderBy('createdAt', 'desc'));
-  
+
   return onSnapshot(
     q,
     (snapshot) => {
@@ -480,7 +517,7 @@ export const subscribeToParticipantCount = (
   onError?: (error: Error) => void
 ): Unsubscribe => {
   const participantsRef = getParticipantsCollection();
-  
+
   return onSnapshot(
     participantsRef,
     (snapshot) => {
@@ -506,11 +543,11 @@ export const toggleParticipantStatus = async (
   try {
     const participantDoc = doc(db, COLLECTION_NAME, id);
     const snapshot = await getDoc(participantDoc);
-    
+
     if (!snapshot.exists()) {
       throw new Error('Participant not found');
     }
-    
+
     await updateDoc(participantDoc, {
       disabled,
       updatedAt: serverTimestamp(),
@@ -529,11 +566,11 @@ export const bulkDeleteParticipants = async (
   ids: string[]
 ): Promise<{ success: number; failed: number }> => {
   if (ids.length === 0) return { success: 0, failed: 0 };
-  
+
   try {
     // Step 1: Fetch all participant data first (for stats update)
     const participantDataMap: Map<string, { organization: string; category: '3K' | '5K' | '10K' }> = new Map();
-    
+
     const fetchPromises = ids.map(async (id) => {
       const participantDoc = doc(db, COLLECTION_NAME, id);
       const snapshot = await getDoc(participantDoc);
@@ -545,28 +582,28 @@ export const bulkDeleteParticipants = async (
         });
       }
     });
-    
+
     await Promise.all(fetchPromises);
-    
+
     // Step 2: Delete all documents in batches (Firestore limit is 500 per batch)
     const BATCH_SIZE = 500;
     const validIds = Array.from(participantDataMap.keys());
-    
+
     for (let i = 0; i < validIds.length; i += BATCH_SIZE) {
       const batch = writeBatch(db);
       const batchIds = validIds.slice(i, i + BATCH_SIZE);
-      
+
       batchIds.forEach((id) => {
         const docRef = doc(db, COLLECTION_NAME, id);
         batch.delete(docRef);
       });
-      
+
       await batch.commit();
     }
-    
+
     // Step 3: Update organization stats (aggregate by org and category)
     const statsUpdates: Map<string, { org: string; category: '3K' | '5K' | '10K'; count: number }> = new Map();
-    
+
     participantDataMap.forEach(({ organization, category }) => {
       const key = `${organization}-${category}`;
       const existing = statsUpdates.get(key);
@@ -576,14 +613,14 @@ export const bulkDeleteParticipants = async (
         statsUpdates.set(key, { org: organization, category, count: 1 });
       }
     });
-    
+
     // Update stats for each org/category combination with correct count
-    const statsPromises = Array.from(statsUpdates.values()).map(({ org, category, count }) => 
+    const statsPromises = Array.from(statsUpdates.values()).map(({ org, category, count }) =>
       bulkDecrementOrgParticipantStats(org, category, count)
     );
-    
+
     await Promise.all(statsPromises);
-    
+
     return { success: validIds.length, failed: ids.length - validIds.length };
   } catch (error) {
     console.error('Bulk delete error:', error);
@@ -600,15 +637,15 @@ export const bulkToggleParticipantStatus = async (
   disabled: boolean
 ): Promise<{ success: number; failed: number }> => {
   if (ids.length === 0) return { success: 0, failed: 0 };
-  
+
   try {
     // Update all documents in batches (Firestore limit is 500 per batch)
     const BATCH_SIZE = 500;
-    
+
     for (let i = 0; i < ids.length; i += BATCH_SIZE) {
       const batch = writeBatch(db);
       const batchIds = ids.slice(i, i + BATCH_SIZE);
-      
+
       batchIds.forEach((id) => {
         const docRef = doc(db, COLLECTION_NAME, id);
         batch.update(docRef, {
@@ -616,10 +653,10 @@ export const bulkToggleParticipantStatus = async (
           updatedAt: serverTimestamp(),
         });
       });
-      
+
       await batch.commit();
     }
-    
+
     return { success: ids.length, failed: 0 };
   } catch (error) {
     console.error('Bulk toggle status error:', error);
@@ -636,7 +673,7 @@ export const toggleSwagKitStatus = async (
 ): Promise<void> => {
   try {
     const participantDoc = doc(db, COLLECTION_NAME, id);
-    
+
     await updateDoc(participantDoc, {
       swagKitGiven,
       updatedAt: serverTimestamp(),
@@ -663,18 +700,18 @@ export const checkBibNumberDuplicate = async (
     const participantsRef = getParticipantsCollection();
     const q = query(participantsRef, where('bibNumber', '==', bibNumber));
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) {
       return null;
     }
-    
+
     // Filter out the excluded participant (for edit scenarios)
     const docs = querySnapshot.docs.filter(doc => doc.id !== excludeParticipantId);
-    
+
     if (docs.length === 0) {
       return null;
     }
-    
+
     return docToParticipant(docs[0]);
   } catch (error) {
     console.error('Error checking bib duplicate:', error);
@@ -693,7 +730,7 @@ export const getParticipantsByOrganization = async (
   try {
     const participantsRef = getParticipantsCollection();
     let q;
-    
+
     if (category) {
       q = query(
         participantsRef,
@@ -708,9 +745,9 @@ export const getParticipantsByOrganization = async (
         orderBy('createdAt', 'asc')
       );
     }
-    
+
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map(doc => docToParticipant(doc));
   } catch (error) {
     console.error('Error fetching participants by organization:', error);
@@ -730,21 +767,21 @@ export const generateBibNumbers = async (
   if (participantIds.length === 0) {
     return { success: 0, failed: 0 };
   }
-  
+
   try {
     const BATCH_SIZE = 500;
     let currentNumber = startNumber;
     let success = 0;
     let failed = 0;
-    
+
     // Process in batches
     for (let i = 0; i < participantIds.length; i += BATCH_SIZE) {
       const batch = writeBatch(db);
       const batchIds = participantIds.slice(i, i + BATCH_SIZE);
-      
+
       for (const id of batchIds) {
         const bibNumber = `${prefix}${currentNumber}`;
-        
+
         // Check for duplicate before assigning
         const existingParticipant = await checkBibNumberDuplicate(bibNumber);
         if (existingParticipant) {
@@ -753,20 +790,20 @@ export const generateBibNumbers = async (
           currentNumber++;
           continue;
         }
-        
+
         const docRef = doc(db, COLLECTION_NAME, id);
         batch.update(docRef, {
           bibNumber,
           updatedAt: serverTimestamp(),
         });
-        
+
         success++;
         currentNumber++;
       }
-      
+
       await batch.commit();
     }
-    
+
     return { success, failed };
   } catch (error) {
     console.error('Error generating bib numbers:', error);
@@ -792,20 +829,20 @@ export const updateBibNumber = async (
       });
       return { success: true };
     }
-    
+
     // Check for duplicates
     const duplicate = await checkBibNumberDuplicate(bibNumber, participantId);
     if (duplicate) {
       return { success: false, duplicateParticipant: duplicate };
     }
-    
+
     // Update bib number
     const participantDoc = doc(db, COLLECTION_NAME, participantId);
     await updateDoc(participantDoc, {
       bibNumber,
       updatedAt: serverTimestamp(),
     });
-    
+
     return { success: true };
   } catch (error) {
     console.error('Error updating bib number:', error);
@@ -820,7 +857,7 @@ export const getAllBibNumbers = async (): Promise<Map<string, Participant>> => {
   try {
     const participantsRef = getParticipantsCollection();
     const querySnapshot = await getDocs(participantsRef);
-    
+
     const bibMap = new Map<string, Participant>();
     querySnapshot.docs.forEach(doc => {
       const participant = docToParticipant(doc);
@@ -828,7 +865,7 @@ export const getAllBibNumbers = async (): Promise<Map<string, Participant>> => {
         bibMap.set(participant.bibNumber, participant);
       }
     });
-    
+
     return bibMap;
   } catch (error) {
     console.error('Error fetching all bib numbers:', error);

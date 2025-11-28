@@ -10,9 +10,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button, Card, Dropdown, Modal, Input, RadioGroup } from '@/components/ui';
 import { Participant, Organization } from '@/types';
-import { 
+import {
   getPaginatedParticipants,
-  getAllParticipants, 
+  getAllParticipants,
   deleteParticipant,
   updateParticipant,
   exportParticipantsToCSV,
@@ -37,7 +37,7 @@ export default function ParticipantsPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Pending filters (user is selecting but not yet applied)
   const [pendingFilters, setPendingFilters] = useState({
     organization: '',
@@ -45,7 +45,7 @@ export default function ParticipantsPage() {
     swagKitGiven: undefined as boolean | undefined,
   });
   const [pendingSearchTerm, setPendingSearchTerm] = useState('');
-  
+
   // Applied filters (actually used for fetching data)
   const [appliedFilters, setAppliedFilters] = useState({
     organization: '',
@@ -53,11 +53,12 @@ export default function ParticipantsPage() {
     swagKitGiven: undefined as boolean | undefined,
   });
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pageCursors, setPageCursors] = useState<(string | null)[]>([null]);
+  const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
   const [editFormData, setEditFormData] = useState<Omit<Participant, 'id' | 'createdAt' | 'updatedAt'>>({
@@ -73,17 +74,17 @@ export default function ParticipantsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   // Selection state for bulk actions
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  
+
   // Firestore read counter
   const [firestoreReads, setFirestoreReads] = useState(0);
-  
+
   // Action menu state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  
+
   // Ref to track if organizations have been loaded (prevents double load in strict mode)
   const organizationsLoadedRef = useRef(false);
 
@@ -94,7 +95,7 @@ export default function ParticipantsPage() {
         setOpenMenuId(null);
       }
     };
-    
+
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openMenuId]);
@@ -104,7 +105,7 @@ export default function ParticipantsPage() {
    */
   const buildFilters = useCallback((): ParticipantFilters => {
     const apiFilters: ParticipantFilters = {};
-    
+
     if (appliedFilters.organization) {
       apiFilters.organization = appliedFilters.organization;
     }
@@ -117,7 +118,7 @@ export default function ParticipantsPage() {
     if (appliedSearchTerm) {
       apiFilters.searchTerm = appliedSearchTerm;
     }
-    
+
     return apiFilters;
   }, [appliedFilters, appliedSearchTerm]);
 
@@ -128,7 +129,7 @@ export default function ParticipantsPage() {
     // Guard to prevent double loading (especially in React strict mode)
     if (organizationsLoadedRef.current) return;
     organizationsLoadedRef.current = true;
-    
+
     const loadOrganizations = async () => {
       try {
         const orgsData = await getAllOrganizations();
@@ -150,22 +151,22 @@ export default function ParticipantsPage() {
    */
   useEffect(() => {
     let isFirstCallback = true;
-    
+
     const unsubscribe = subscribeToParticipantCount(
       (newCount) => {
         // Skip updates during bulk upload to save reads
         if (isUploading) return;
-        
+
+        // Update total count from subscription
+        setTotalCount(newCount);
+
         // Skip the first callback - let the pagination effect handle initial load
         if (isFirstCallback) {
           isFirstCallback = false;
           return;
         }
-        
-        // If count changed, reload
-        if (newCount !== totalCount) {
-          loadParticipants();
-        }
+
+        loadParticipants();
       },
       (error) => {
         console.error('Real-time subscription error:', error);
@@ -189,17 +190,29 @@ export default function ParticipantsPage() {
     try {
       setLoading(true);
       const apiFilters = buildFilters();
-      
+
+      const cursor = pageCursors[currentPage - 1];
+
       const result = await getPaginatedParticipants(
         apiFilters,
-        currentPage,
+        cursor,
         itemsPerPage
       );
+
       setParticipants(result.participants);
-      setTotalCount(result.totalCount);
-      setTotalPages(result.totalPages);
-      // Count reads: participants + 1 for count query
-      setFirestoreReads(prev => prev + result.participants.length + 1);
+      setHasMore(result.hasMore);
+
+      // Update next page cursor if available
+      if (result.lastVisible) {
+        setPageCursors(prev => {
+          const newCursors = [...prev];
+          newCursors[currentPage] = result.lastVisible;
+          return newCursors;
+        });
+      }
+
+      // Count reads: participants
+      setFirestoreReads(prev => prev + result.participants.length);
     } catch (error) {
       toast.error('Failed to load participants');
       console.error(error);
@@ -235,7 +248,7 @@ export default function ParticipantsPage() {
       ...prev,
       [name]: value,
     }));
-    
+
     // Clear bib duplicate when changing bib number
     if (name === 'bibNumber') {
       setBibDuplicate(null);
@@ -251,7 +264,7 @@ export default function ParticipantsPage() {
       setBibDuplicate(null);
       return;
     }
-    
+
     try {
       const duplicate = await checkBibNumberDuplicate(bibNumber, editingParticipant?.id);
       setBibDuplicate(duplicate);
@@ -272,7 +285,7 @@ export default function ParticipantsPage() {
     const bibNumber = editFormData.bibNumber?.trim();
     const originalBib = editingParticipant.bibNumber?.trim();
     const bibChanged = bibNumber !== originalBib;
-    
+
     if (bibNumber && bibChanged) {
       const duplicate = await checkBibNumberDuplicate(bibNumber, editingParticipant.id);
       // Count read for duplicate check
@@ -290,19 +303,19 @@ export default function ParticipantsPage() {
         bibNumber: bibNumber || undefined,
       });
       toast.success('Participant updated successfully');
-      
+
       // Optimistically update the local state instead of reloading
-      setParticipants(prev => prev.map(p => 
-        p.id === editingParticipant.id 
-          ? { 
-              ...p, 
-              ...editFormData, 
-              bibNumber: bibNumber || undefined,
-              updatedAt: new Date() 
-            } 
+      setParticipants(prev => prev.map(p =>
+        p.id === editingParticipant.id
+          ? {
+            ...p,
+            ...editFormData,
+            bibNumber: bibNumber || undefined,
+            updatedAt: new Date()
+          }
           : p
       ));
-      
+
       setIsEditModalOpen(false);
       setEditingParticipant(null);
       setBibDuplicate(null);
@@ -331,7 +344,7 @@ export default function ParticipantsPage() {
     try {
       await deleteParticipant(id);
       toast.success('Participant deleted successfully');
-      
+
       // If current page is now empty and not on first page, go to previous page
       if (participants.length === 1 && currentPage > 1) {
         setCurrentPage(prev => prev - 1);
@@ -379,24 +392,24 @@ export default function ParticipantsPage() {
    */
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    
+
     if (!confirm(`Are you sure you want to delete ${selectedIds.size} participant(s)? This action cannot be undone.`)) {
       return;
     }
 
     setIsBulkDeleting(true);
-    
+
     // Store current state for potential rollback
     const previousParticipants = [...participants];
     const idsToDelete = Array.from(selectedIds);
-    
+
     // Optimistic update - remove from UI immediately
     setParticipants(prev => prev.filter(p => !selectedIds.has(p.id || '')));
     setSelectedIds(new Set());
-    
+
     try {
       const result = await bulkDeleteParticipants(idsToDelete);
-      
+
       if (result.success > 0) {
         toast.success(`Deleted ${result.success} participant(s)`);
       }
@@ -419,9 +432,9 @@ export default function ParticipantsPage() {
    */
   const handleToggleStatus = async (participant: Participant) => {
     if (!participant.id) return;
-    
+
     const action = participant.disabled ? 're-enroll' : 'unenroll';
-    
+
     try {
       await toggleParticipantStatus(participant.id, !participant.disabled);
       toast.success(`Participant ${action}ed successfully`);
@@ -437,19 +450,19 @@ export default function ParticipantsPage() {
    */
   const handleToggleSwagKit = async (participant: Participant) => {
     if (!participant.id) return;
-    
+
     const newStatus = !participant.swagKitGiven;
-    
+
     // Optimistic update
-    setParticipants(prev => prev.map(p => 
+    setParticipants(prev => prev.map(p =>
       p.id === participant.id ? { ...p, swagKitGiven: newStatus } : p
     ));
-    
+
     try {
       await toggleSwagKitStatus(participant.id, newStatus);
     } catch (error: unknown) {
       // Rollback on error
-      setParticipants(prev => prev.map(p => 
+      setParticipants(prev => prev.map(p =>
         p.id === participant.id ? { ...p, swagKitGiven: !newStatus } : p
       ));
       const message = error instanceof Error ? error.message : 'Failed to update swag kit status';
@@ -462,22 +475,22 @@ export default function ParticipantsPage() {
    */
   const handleBulkToggleStatus = async (disable: boolean) => {
     if (selectedIds.size === 0) return;
-    
+
     const action = disable ? 'unenroll' : 're-enroll';
-    
+
     // Store current state for potential rollback
     const previousParticipants = [...participants];
     const idsToToggle = Array.from(selectedIds);
-    
+
     // Optimistic update - update UI immediately
-    setParticipants(prev => prev.map(p => 
+    setParticipants(prev => prev.map(p =>
       selectedIds.has(p.id || '') ? { ...p, disabled: disable } : p
     ));
     setSelectedIds(new Set());
-    
+
     try {
       const result = await bulkToggleParticipantStatus(idsToToggle, disable);
-      
+
       if (result.success > 0) {
         toast.success(`${action === 'unenroll' ? 'Unenrolled' : 'Re-enrolled'} ${result.success} participant(s)`);
       }
@@ -522,6 +535,7 @@ export default function ParticipantsPage() {
     setAppliedFilters({ ...pendingFilters });
     setAppliedSearchTerm(pendingSearchTerm);
     setCurrentPage(1);
+    setPageCursors([null]); // Reset cursors
   };
 
   /**
@@ -530,6 +544,7 @@ export default function ParticipantsPage() {
   const handleSearch = () => {
     setAppliedSearchTerm(pendingSearchTerm);
     setCurrentPage(1);
+    setPageCursors([null]); // Reset cursors
   };
 
   /**
@@ -558,6 +573,7 @@ export default function ParticipantsPage() {
       swagKitGiven: undefined,
     });
     setCurrentPage(1);
+    setPageCursors([null]); // Reset cursors
   };
 
   /**
@@ -575,22 +591,18 @@ export default function ParticipantsPage() {
   };
 
   // Check if there are any applied filters
-  const hasAppliedFilters = 
-    appliedSearchTerm || 
-    appliedFilters.organization || 
+  const hasAppliedFilters =
+    appliedSearchTerm ||
+    appliedFilters.organization ||
     appliedFilters.category ||
     appliedFilters.swagKitGiven !== undefined;
 
   // Check if pending filters differ from applied (show apply button)
-  const hasPendingChanges = 
+  const hasPendingChanges =
     pendingSearchTerm !== appliedSearchTerm ||
     pendingFilters.organization !== appliedFilters.organization ||
     pendingFilters.category !== appliedFilters.category ||
     pendingFilters.swagKitGiven !== appliedFilters.swagKitGiven;
-
-  // Pagination calculations
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + participants.length, totalCount);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -600,6 +612,7 @@ export default function ParticipantsPage() {
   const handleItemsPerPageChange = (value: number) => {
     setItemsPerPage(value);
     setCurrentPage(1);
+    setPageCursors([null]); // Reset cursors
   };
 
   return (
@@ -687,8 +700,8 @@ export default function ParticipantsPage() {
                   pendingFilters.swagKitGiven === undefined
                     ? ''
                     : pendingFilters.swagKitGiven
-                    ? 'true'
-                    : 'false'
+                      ? 'true'
+                      : 'false'
                 }
                 onChange={(e) => {
                   const value = e.target.value;
@@ -718,7 +731,7 @@ export default function ParticipantsPage() {
         {/* Participants List */}
         {loading ? (
           <div className={styles.loading}>Loading participants...</div>
-        ) : totalCount === 0 ? (
+        ) : participants.length === 0 ? (
           <Card className={styles.emptyState}>
             <p>
               {hasAppliedFilters
@@ -730,7 +743,7 @@ export default function ParticipantsPage() {
           <>
             <div className={styles.paginationTop}>
               <div className={styles.paginationInfo}>
-                Showing {startIndex + 1} to {endIndex} of {totalCount} participants
+                Showing {participants.length} participants
               </div>
               <div className={styles.itemsPerPageContainer}>
                 <span className={styles.itemsPerPageLabel}>Show:</span>
@@ -806,8 +819,8 @@ export default function ParticipantsPage() {
                 <div>Actions</div>
               </div>
               {participants.map((participant: Participant) => (
-                <div 
-                  key={participant.id} 
+                <div
+                  key={participant.id}
                   className={`${styles.participantCard} ${participant.disabled ? styles.disabledRow : ''}`}
                 >
                   <div className={styles.checkboxCell}>
@@ -914,54 +927,29 @@ export default function ParticipantsPage() {
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <div className={styles.pagination}>
-                <Button
-                  variant="secondary"
-                  size="small"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                
-                <div className={styles.pageNumbers}>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(page => {
-                      // Show first page, last page, current page and adjacent pages
-                      return page === 1 || 
-                             page === totalPages || 
-                             Math.abs(page - currentPage) <= 1;
-                    })
-                    .map((page, index, array) => {
-                      // Add ellipsis if there's a gap
-                      const prevPage = array[index - 1];
-                      const showEllipsis = prevPage && page - prevPage > 1;
-                      
-                      return (
-                        <React.Fragment key={page}>
-                          {showEllipsis && <span className={styles.ellipsis}>...</span>}
-                          <button
-                            onClick={() => handlePageChange(page)}
-                            className={`${styles.pageButton} ${page === currentPage ? styles.activePage : ''}`}
-                          >
-                            {page}
-                          </button>
-                        </React.Fragment>
-                      );
-                    })}
-                </div>
+            <div className={styles.pagination}>
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
 
-                <Button
-                  variant="secondary"
-                  size="small"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
+              <div className={styles.pageNumbers}>
+                <span className={styles.pageNumber}>Page {currentPage}</span>
               </div>
-            )}
+
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!hasMore}
+              >
+                Next
+              </Button>
+            </div>
           </>
         )}
       </div>
@@ -991,7 +979,7 @@ export default function ParticipantsPage() {
             onChange={handleEditInputChange}
             required
           />
-          
+
           <Dropdown
             label="Organization"
             name="organization"
@@ -1017,7 +1005,7 @@ export default function ParticipantsPage() {
             direction="horizontal"
             required
           />
-          
+
           <Input
             label="Mobile Number"
             name="mobileNumber"
@@ -1040,7 +1028,7 @@ export default function ParticipantsPage() {
             direction="horizontal"
             required
           />
-          
+
           <Dropdown
             label="T-Shirt Size"
             name="size"

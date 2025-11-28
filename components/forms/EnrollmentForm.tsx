@@ -61,7 +61,7 @@ const EXPIRY_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
  */
 const getPersistedOrganization = (): string => {
   if (typeof window === 'undefined') return '';
-  
+
   try {
     const expiry = localStorage.getItem(STORAGE_EXPIRY_KEY);
     if (expiry && Date.now() > parseInt(expiry, 10)) {
@@ -81,7 +81,7 @@ const getPersistedOrganization = (): string => {
  */
 const persistOrganization = (org: string): void => {
   if (typeof window === 'undefined') return;
-  
+
   try {
     localStorage.setItem(STORAGE_KEY, org);
     localStorage.setItem(STORAGE_EXPIRY_KEY, String(Date.now() + EXPIRY_DURATION_MS));
@@ -106,37 +106,31 @@ const initialFormData: Omit<Participant, 'id' | 'createdAt'> = {
 /**
  * EnrollmentForm component
  */
-const EnrollmentForm: React.FC = () => {
+interface EnrollmentFormProps {
+  organizations: { name: string }[];
+}
+
+/**
+ * EnrollmentForm component
+ */
+const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loadingOrgs, setLoadingOrgs] = useState(true);
 
   /**
    * Load organizations and persisted selection on mount
    */
+  /**
+   * Load persisted selection on mount
+   */
   useEffect(() => {
-    loadOrganizations();
-    
     // Load persisted organization
     const savedOrg = getPersistedOrganization();
     if (savedOrg) {
       setFormData(prev => ({ ...prev, organization: savedOrg }));
     }
   }, []);
-
-  const loadOrganizations = async () => {
-    try {
-      const orgs = await getAllOrganizations();
-      setOrganizations(orgs);
-    } catch (error) {
-      console.error('Error loading organizations:', error);
-      toast.error('Failed to load organizations');
-    } finally {
-      setLoadingOrgs(false);
-    }
-  };
 
   /**
    * Handle input change
@@ -145,7 +139,7 @@ const EnrollmentForm: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -178,7 +172,7 @@ const EnrollmentForm: React.FC = () => {
    */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Validate form data
     const validationError = validateParticipant(formData);
     if (validationError) {
@@ -187,7 +181,7 @@ const EnrollmentForm: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    
+
     // Check for bib number duplicate if bib is provided
     const bibNumber = formData.bibNumber?.trim();
     if (bibNumber) {
@@ -211,22 +205,22 @@ const EnrollmentForm: React.FC = () => {
     try {
       // Submit to Firestore
       const participantId = await addParticipant(formData);
-      
+
       // Persist organization for future enrollments
       persistOrganization(formData.organization);
-      
+
       // Show success toast
       toast.success('Enrollment successful! 🎉', {
         duration: 1000,
         position: 'top-center',
       });
-      
+
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      
+
       // Reset form but keep organization
       handleReset(true);
-      
+
       console.log('Participant enrolled with ID:', participantId);
     } catch (error) {
       console.error('Submission error:', error);
@@ -247,7 +241,7 @@ const EnrollmentForm: React.FC = () => {
           label="Organization"
           name="organization"
           options={[
-            { value: '', label: loadingOrgs ? 'Loading...' : 'Select your organization' },
+            { value: '', label: 'Select your organization' },
             ...organizations.map((org) => ({
               value: org.name,
               label: org.name,
@@ -258,7 +252,6 @@ const EnrollmentForm: React.FC = () => {
           onChange={handleChange}
           error={errors.organization}
           required
-          disabled={loadingOrgs}
         />
 
         {/* Name */}
@@ -345,7 +338,7 @@ const EnrollmentForm: React.FC = () => {
         >
           {isSubmitting ? 'Submitting...' : 'Submit Enrollment'}
         </Button>
-        
+
         <Button
           type="button"
           variant="secondary"
