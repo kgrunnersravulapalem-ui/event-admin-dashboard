@@ -12,6 +12,10 @@ import { Card } from '@/components/ui';
 import Link from 'next/link';
 import { getAllOrganizations } from '@/lib/organizationsService';
 import styles from '@/styles/Dashboard.module.css';
+import { useParticipants } from '@/hooks/useParticipants';
+
+// Feature flag for safe migration
+const USE_REALTIME_STORE = true;
 
 /**
  * Dashboard statistics calculated from organizations
@@ -31,11 +35,71 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Real-time Store Integration
+  const {
+    allParticipants,
+    isLoading: isStoreLoading,
+    initialize: initializeStore
+  } = useParticipants({
+    autoInitialize: USE_REALTIME_STORE
+  });
+
   useEffect(() => {
     loadData();
   }, []);
 
+  // Recalculate stats when real-time data changes
+  useEffect(() => {
+    if (USE_REALTIME_STORE && allParticipants.length > 0) {
+      updateStatsFromRealtimeData();
+    }
+  }, [USE_REALTIME_STORE, allParticipants]);
+
+  const updateStatsFromRealtimeData = async () => {
+    try {
+      // We still need organization count
+      // OPTIMIZATION: If we have organizations in store (future), use that.
+      // For now, we fetch orgs but rely on persistence to make it fast.
+      const organizations = await getAllOrganizations();
+
+      const calculatedStats: DashboardStats = {
+        totalOrganizations: organizations.length,
+        totalParticipants: allParticipants.length,
+        category3K: allParticipants.filter(p => p.category === '3K').length,
+        category5K: allParticipants.filter(p => p.category === '5K').length,
+        category10K: allParticipants.filter(p => p.category === '10K').length,
+      };
+
+      setStats(calculatedStats);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error updating stats from real-time data:', error);
+    }
+  };
+
   const loadData = async () => {
+    // If using real-time store, we handle loading in the other effect
+    // But we still need initial organization count
+    if (USE_REALTIME_STORE) {
+      // OPTIMIZATION: Only fetch if we don't have stats yet
+      if (!stats) {
+        try {
+          const organizations = await getAllOrganizations();
+          setStats(prev => ({
+            ...prev,
+            totalOrganizations: organizations.length,
+            totalParticipants: prev?.totalParticipants || 0,
+            category3K: prev?.category3K || 0,
+            category5K: prev?.category5K || 0,
+            category10K: prev?.category10K || 0,
+          }));
+        } catch (error) {
+          console.error('Error loading organizations:', error);
+        }
+      }
+      return;
+    }
+
     try {
       setLoading(true);
       const organizations = await getAllOrganizations();
@@ -173,6 +237,19 @@ export default function DashboardPage() {
                 <div>
                   <div className={styles.linkTitle}>Manage Organizations/Schools</div>
                   <div className={styles.linkDesc}>Add or edit organizations</div>
+                </div>
+              </div>
+            </Card>
+          </Link>
+          <Link href="/overall-stats" className={styles.linkCard}>
+            <Card>
+              <div className={styles.linkContent}>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <div>
+                  <div className={styles.linkTitle}>Overall Statistics</div>
+                  <div className={styles.linkDesc}>View global event stats</div>
                 </div>
               </div>
             </Card>

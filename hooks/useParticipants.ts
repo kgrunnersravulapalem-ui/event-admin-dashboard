@@ -46,7 +46,7 @@ export interface UseParticipantsReturn {
     isLoading: boolean;
     isInitializing: boolean;
     error: string | null;
-    lastSync: Date | null;
+    lastUpdated: number | null;
 
     // Actions
     initialize: () => void;
@@ -74,9 +74,9 @@ export function useParticipants(options: UseParticipantsOptions = {}): UsePartic
         participants: allParticipants,
         organizations,
         isInitializing,
-        isLoading,
+        isLoading: isStoreLoading, // Alias store's isLoading to avoid conflict with hook's isLoading
         error,
-        lastSync,
+        lastUpdated, // Renamed from lastSync
         listenerActive,
         initialize,
         cleanup,
@@ -130,7 +130,6 @@ export function useParticipants(options: UseParticipantsOptions = {}): UsePartic
             );
         }
 
-        console.log(`[REALTIME-TEST] 🔍 Filtering: Input ${allParticipants.length} -> Output ${result.length}`);
         return result;
     }, [allParticipants, filters]);
 
@@ -159,10 +158,11 @@ export function useParticipants(options: UseParticipantsOptions = {}): UsePartic
         organizations,
 
         // States
-        isLoading,
+        // States
+        isLoading: isStoreLoading,
         isInitializing,
         error,
-        lastSync,
+        lastUpdated,
 
         // Actions
         initialize,

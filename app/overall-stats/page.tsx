@@ -13,6 +13,11 @@ import { getAllOrganizations } from '@/lib/organizationsService';
 import { kebabCase } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/OverallStats.module.css';
+import { useParticipants } from '@/hooks/useParticipants';
+import { Participant, OrganizationStats } from '@/types';
+
+// Feature flag for safe migration
+const USE_REALTIME_STORE = true;
 import {
     BarChart,
     Bar,
@@ -113,6 +118,116 @@ export default function OverallStatsPage() {
         swag10K: 0,
     });
 
+    // Real-time Store Integration
+    const {
+        allParticipants,
+        isLoading: isStoreLoading,
+        initialize: initializeStore
+    } = useParticipants({
+        autoInitialize: USE_REALTIME_STORE
+    });
+
+    // Calculate stats from real-time data
+    useEffect(() => {
+        if (USE_REALTIME_STORE && allParticipants.length > 0 && organizations.length > 0) {
+            calculateRealtimeStats();
+        }
+    }, [USE_REALTIME_STORE, allParticipants, organizations.length]);
+
+    const calculateRealtimeStats = () => {
+        // 1. Aggregate Global Stats
+        const aggregated: AggregatedStats = {
+            totalParticipants: 0,
+            swagKitTaken: 0,
+            totalMale: 0,
+            totalFemale: 0,
+            total3K: 0,
+            total5K: 0,
+            total10K: 0,
+            male3K: 0,
+            male5K: 0,
+            male10K: 0,
+            female3K: 0,
+            female5K: 0,
+            female10K: 0,
+            swag3K: 0,
+            swag5K: 0,
+            swag10K: 0,
+        };
+
+        // Helper to init org stats
+        const orgStatsMap = new Map<string, OrganizationStats>();
+        organizations.forEach(org => {
+            orgStatsMap.set(org.name, {
+                totalParticipants: 0,
+                swagKitTaken: 0,
+                total3K: 0, male3K: 0, female3K: 0, swag3K: 0,
+                total5K: 0, male5K: 0, female5K: 0, swag5K: 0,
+                total10K: 0, male10K: 0, female10K: 0, swag10K: 0,
+            });
+        });
+
+        allParticipants.forEach(p => {
+            // Global Aggregation
+            aggregated.totalParticipants++;
+            if (p.swagKitGiven) aggregated.swagKitTaken++;
+
+            if (p.gender === 'Male') aggregated.totalMale++;
+            else if (p.gender === 'Female') aggregated.totalFemale++;
+
+            if (p.category === '3K') {
+                aggregated.total3K++;
+                if (p.gender === 'Male') aggregated.male3K++;
+                else if (p.gender === 'Female') aggregated.female3K++;
+                if (p.swagKitGiven) aggregated.swag3K++;
+            } else if (p.category === '5K') {
+                aggregated.total5K++;
+                if (p.gender === 'Male') aggregated.male5K++;
+                else if (p.gender === 'Female') aggregated.female5K++;
+                if (p.swagKitGiven) aggregated.swag5K++;
+            } else if (p.category === '10K') {
+                aggregated.total10K++;
+                if (p.gender === 'Male') aggregated.male10K++;
+                else if (p.gender === 'Female') aggregated.female10K++;
+                if (p.swagKitGiven) aggregated.swag10K++;
+            }
+
+            // Organization Aggregation
+            if (p.organization) {
+                const stats = orgStatsMap.get(p.organization);
+                if (stats) {
+                    stats.totalParticipants++;
+                    if (p.swagKitGiven) stats.swagKitTaken++;
+
+                    if (p.category === '3K') {
+                        stats.total3K++;
+                        if (p.gender === 'Male') stats.male3K++;
+                        else if (p.gender === 'Female') stats.female3K++;
+                        if (p.swagKitGiven) stats.swag3K++;
+                    } else if (p.category === '5K') {
+                        stats.total5K++;
+                        if (p.gender === 'Male') stats.male5K++;
+                        else if (p.gender === 'Female') stats.female5K++;
+                        if (p.swagKitGiven) stats.swag5K++;
+                    } else if (p.category === '10K') {
+                        stats.total10K++;
+                        if (p.gender === 'Male') stats.male10K++;
+                        else if (p.gender === 'Female') stats.female10K++;
+                        if (p.swagKitGiven) stats.swag10K++;
+                    }
+                }
+            }
+        });
+
+        setStats(aggregated);
+
+        // Update organizations with real-time stats
+        setOrganizations(prev => prev.map(org => ({
+            ...org,
+            stats: orgStatsMap.get(org.name) || org.stats
+        })));
+    };
+
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -120,7 +235,13 @@ export default function OverallStatsPage() {
                 const orgsData = await getAllOrganizations();
                 setOrganizations(orgsData);
 
-                // Aggregate stats
+                // If using real-time store, we'll calculate stats in the other effect
+                if (USE_REALTIME_STORE) {
+                    setLoading(false);
+                    return;
+                }
+
+                // Aggregate stats (Legacy)
                 const aggregated: AggregatedStats = {
                     totalParticipants: 0,
                     swagKitTaken: 0,

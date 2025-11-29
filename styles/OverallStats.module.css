@@ -77,12 +77,14 @@
 .totalCard .summaryValue {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .swagCard .summaryValue {
     background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -144,7 +146,7 @@
 /* Organization/School Charts Grid */
 .orgChartsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 1.5rem;
 }
 

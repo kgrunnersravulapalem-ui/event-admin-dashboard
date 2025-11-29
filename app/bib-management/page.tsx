@@ -22,6 +22,10 @@ import {
 import { getAllOrganizations } from '@/lib/organizationsService';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/BibManagement.module.css';
+import { useParticipants } from '@/hooks/useParticipants';
+
+// Feature flag for safe migration
+const USE_REALTIME_STORE = true;
 
 // Available categories for bib generation
 const CATEGORIES = ['3K', '5K', '10K'];
@@ -73,10 +77,47 @@ export default function BibManagementPage() {
   const [duplicateParticipant, setDuplicateParticipant] = useState<Participant | null>(null);
   const [savingBib, setSavingBib] = useState(false);
 
+  // Real-time Store Integration
+  const {
+    allParticipants,
+    isLoading: isStoreLoading,
+    initialize: initializeStore
+  } = useParticipants({
+    autoInitialize: USE_REALTIME_STORE
+  });
+
   // Load organizations on mount
   useEffect(() => {
     loadOrganizations();
   }, []);
+
+  // Sync real-time data to categoryData state
+  useEffect(() => {
+    if (USE_REALTIME_STORE && selectedOrganization && allParticipants.length > 0) {
+      const newCategoryData: Record<string, CategoryData> = {};
+
+      CATEGORIES.forEach(category => {
+        const categoryParticipants = allParticipants.filter(
+          p => p.organization === selectedOrganization && p.category === category
+        );
+
+        newCategoryData[category] = {
+          allParticipants: categoryParticipants,
+          withoutBibs: categoryParticipants.filter(p => !p.bibNumber),
+          loaded: true
+        };
+      });
+
+      setCategoryData(newCategoryData);
+    } else if (USE_REALTIME_STORE && !selectedOrganization) {
+      // Reset if no org selected
+      setCategoryData({
+        '3K': { withoutBibs: [], allParticipants: [], loaded: false },
+        '5K': { withoutBibs: [], allParticipants: [], loaded: false },
+        '10K': { withoutBibs: [], allParticipants: [], loaded: false },
+      });
+    }
+  }, [USE_REALTIME_STORE, selectedOrganization, allParticipants]);
 
   // Load all categories when organization changes
   useEffect(() => {
@@ -105,6 +146,9 @@ export default function BibManagementPage() {
 
   const loadAllCategoryData = async () => {
     if (!selectedOrganization) return;
+
+    // If using real-time store, data is handled by the useEffect above
+    if (USE_REALTIME_STORE) return;
 
     setLoading(true);
     try {
@@ -135,6 +179,9 @@ export default function BibManagementPage() {
 
   const loadCategoryData = async (category: string) => {
     if (!selectedOrganization) return;
+
+    // If using real-time store, data is handled by the useEffect above
+    if (USE_REALTIME_STORE) return;
 
     setLoading(true);
     try {
@@ -194,7 +241,9 @@ export default function BibManagementPage() {
       }
 
       // Reload this category's participants
-      await loadCategoryData(activeCategory);
+      if (!USE_REALTIME_STORE) {
+        await loadCategoryData(activeCategory);
+      }
     } catch (error) {
       toast.error(`Failed to generate bib numbers for ${activeCategory}`);
     } finally {
@@ -252,6 +301,8 @@ export default function BibManagementPage() {
     const updatedBib = editBibValue.trim() || null;
 
     // OPTIMIZATION: Optimistic update - update UI immediately
+    // If using real-time store, we can skip this or keep it for instant feedback
+    // Keeping it for instant feedback is good, store will reconcile shortly
     setCategoryData(prev => ({
       ...prev,
       [activeCategory]: {
