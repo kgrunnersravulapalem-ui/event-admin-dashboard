@@ -46,26 +46,20 @@ export default function ParticipantsPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Pending filters (user is selecting but not yet applied)
-  const [pendingFilters, setPendingFilters] = useState({
+  // Active filters (apply instantly)
+  const [filters, setFilters] = useState({
     organization: '',
     category: '',
     gender: '',
     swagKitGiven: undefined as boolean | undefined,
   });
-  const [pendingSearchTerm, setPendingSearchTerm] = useState('');
 
-  // Applied filters (actually used for fetching data)
-  const [appliedFilters, setAppliedFilters] = useState({
-    organization: '',
-    category: '',
-    gender: '',
-    swagKitGiven: undefined as boolean | undefined,
-  });
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
+  // Search term with debounce
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(25); // Changed from 10 to 25
   const [pageCursors, setPageCursors] = useState<(string | null)[]>([null]);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -95,14 +89,35 @@ export default function ParticipantsPage() {
   // Ref to track if organizations have been loaded (prevents double load in strict mode)
   const organizationsLoadedRef = useRef(false);
 
+  // Debounce search term (300ms delay)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Auto-clear filters when user starts searching
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      setFilters({
+        organization: '',
+        category: '',
+        gender: '',
+        swagKitGiven: undefined,
+      });
+    }
+  }, [searchTerm]);
+
   // Real-time Store Integration
   const realtimeStore = useParticipants({
     filters: {
-      organization: appliedFilters.organization,
-      category: appliedFilters.category,
-      gender: appliedFilters.gender,
-      swagKitGiven: appliedFilters.swagKitGiven,
-      searchTerm: appliedSearchTerm,
+      organization: filters.organization,
+      category: filters.category,
+      gender: filters.gender,
+      swagKitGiven: filters.swagKitGiven,
+      searchTerm: debouncedSearchTerm,
     },
     pageSize: itemsPerPage,
     currentPage: currentPage,
@@ -129,29 +144,29 @@ export default function ParticipantsPage() {
 
 
   /**
-   * Build filters object for API call (uses applied filters only)
+   * Build filters object for API call
    */
   const buildFilters = useCallback((): ParticipantFilters => {
     const apiFilters: ParticipantFilters = {};
 
-    if (appliedFilters.organization) {
-      apiFilters.organization = appliedFilters.organization;
+    if (filters.organization) {
+      apiFilters.organization = filters.organization;
     }
-    if (appliedFilters.category) {
-      apiFilters.category = appliedFilters.category;
+    if (filters.category) {
+      apiFilters.category = filters.category;
     }
-    if (appliedFilters.gender) {
-      apiFilters.gender = appliedFilters.gender;
+    if (filters.gender) {
+      apiFilters.gender = filters.gender;
     }
-    if (appliedFilters.swagKitGiven !== undefined) {
-      apiFilters.swagKitGiven = appliedFilters.swagKitGiven;
+    if (filters.swagKitGiven !== undefined) {
+      apiFilters.swagKitGiven = filters.swagKitGiven;
     }
-    if (appliedSearchTerm) {
-      apiFilters.searchTerm = appliedSearchTerm;
+    if (debouncedSearchTerm) {
+      apiFilters.searchTerm = debouncedSearchTerm;
     }
 
     return apiFilters;
-  }, [appliedFilters, appliedSearchTerm]);
+  }, [filters, debouncedSearchTerm]);
 
   /**
    * Load organizations on mount (only once)
@@ -202,20 +217,21 @@ export default function ParticipantsPage() {
   //     }
   //   );
   //   return () => unsubscribe();
-  // }, [totalCount, appliedFilters, appliedSearchTerm, currentPage, itemsPerPage, isUploading]);
+  // }, [totalCount, filters, debouncedSearchTerm, currentPage, itemsPerPage, isUploading]);
 
   /**
-   * Load participants when applied filters or pagination changes
-   */
-  useEffect(() => {
-    loadParticipants();
-  }, [currentPage, itemsPerPage, appliedFilters, appliedSearchTerm]);
-
-  /**
-   * Load participants with pagination
+   * Load participants using pagination (DEPRECATED - using real-time store)
    */
   const loadParticipants = async () => {
-    // If using real-time store, skip manual loading
+    // Skip if using real-time store
+    if (USE_REALTIME_STORE) return;
+
+    // Trigger data fetch when filters change (only for non-real-time mode)
+    useEffect(() => {
+      if (!USE_REALTIME_STORE) {
+        loadParticipants();
+      }
+    }, [currentPage, itemsPerPage, filters, debouncedSearchTerm]);
     if (USE_REALTIME_STORE) return;
 
     try {
@@ -583,38 +599,17 @@ export default function ParticipantsPage() {
     }
   };
 
-  /**
-   * Apply filters - copies pending filters to applied filters
-   */
-  const applyFilters = () => {
-    setAppliedFilters({ ...pendingFilters });
-    setAppliedSearchTerm(pendingSearchTerm);
-    setCurrentPage(1);
-    setPageCursors([null]); // Reset cursors
-  };
 
-  /**
-   * Handle search - applies search term
-   */
-  const handleSearch = () => {
-    setAppliedSearchTerm(pendingSearchTerm);
-    setCurrentPage(1);
-    setPageCursors([null]); // Reset cursors
-  };
+
+
 
   /**
    * Clear all filters
    */
   const clearFilters = () => {
-    setPendingSearchTerm('');
-    setPendingFilters({
-      organization: '',
-      category: '',
-      gender: '',
-      swagKitGiven: undefined,
-    });
-    setAppliedSearchTerm('');
-    setAppliedFilters({
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setFilters({
       organization: '',
       category: '',
       gender: '',
@@ -624,21 +619,13 @@ export default function ParticipantsPage() {
     setPageCursors([null]); // Reset cursors
   };
 
-  // Check if there are any applied filters
+  // Check if there are any active filters
   const hasAppliedFilters =
-    appliedSearchTerm ||
-    appliedFilters.organization ||
-    appliedFilters.category ||
-    appliedFilters.gender ||
-    appliedFilters.swagKitGiven !== undefined;
-
-  // Check if pending filters differ from applied (show apply button)
-  const hasPendingChanges =
-    pendingSearchTerm !== appliedSearchTerm ||
-    pendingFilters.organization !== appliedFilters.organization ||
-    pendingFilters.category !== appliedFilters.category ||
-    pendingFilters.gender !== appliedFilters.gender ||
-    pendingFilters.swagKitGiven !== appliedFilters.swagKitGiven;
+    debouncedSearchTerm ||
+    filters.organization ||
+    filters.category ||
+    filters.gender ||
+    filters.swagKitGiven !== undefined;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -674,16 +661,13 @@ export default function ParticipantsPage() {
         </div>
 
         <ParticipantsFilter
-          pendingFilters={pendingFilters}
-          setPendingFilters={setPendingFilters}
-          pendingSearchTerm={pendingSearchTerm}
-          setPendingSearchTerm={setPendingSearchTerm}
+          filters={filters}
+          setFilters={setFilters}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
           organizations={organizations}
-          onApply={applyFilters}
           onClear={clearFilters}
-          onSearch={handleSearch}
           hasAppliedFilters={!!hasAppliedFilters}
-          hasPendingChanges={hasPendingChanges}
         />
 
         {/* Participants List */}

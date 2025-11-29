@@ -77,3 +77,82 @@
   border-radius: 0.25rem;
   border: 1px solid #fecaca;
 }
+
+/* Swag Kit Toggle - iOS Style (matching participants table) */
+.swagFieldWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  grid-column: 1 / -1;
+}
+
+.swagLabel {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.toggleSwitch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.toggleInput {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggleSlider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  border-radius: 22px;
+  transition: background-color 0.3s ease;
+}
+
+.toggleSlider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.toggleInput:checked+.toggleSlider {
+  background-color: var(--theme-primary);
+}
+
+.toggleInput:checked+.toggleSlider::before {
+  transform: translateX(18px);
+}
+
+.toggleInput:focus+.toggleSlider {
+  box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb), 0.3);
+}
+
+.toggleSwitch:active .toggleSlider::before {
+  width: 22px;
+}
+
+.toggleSwitch:active .toggleInput:checked+.toggleSlider::before {
+  transform: translateX(14px);
+}

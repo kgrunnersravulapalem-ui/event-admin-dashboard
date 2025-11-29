@@ -4,61 +4,45 @@ import { Organization } from '@/types';
 import styles from '@/styles/Participants.module.css';
 
 interface ParticipantsFilterProps {
-    pendingFilters: {
+    filters: {
         organization: string;
         category: string;
         gender: string;
         swagKitGiven: boolean | undefined;
     };
-    setPendingFilters: (filters: {
+    setFilters: (filters: {
         organization: string;
         category: string;
         gender: string;
         swagKitGiven: boolean | undefined;
     }) => void;
-    pendingSearchTerm: string;
-    setPendingSearchTerm: (term: string) => void;
+    searchTerm: string;
+    setSearchTerm: (term: string) => void;
     organizations: Organization[];
-    onApply: () => void;
     onClear: () => void;
-    onSearch: () => void;
     hasAppliedFilters: boolean;
-    hasPendingChanges: boolean;
 }
 
 const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
-    pendingFilters,
-    setPendingFilters,
-    pendingSearchTerm,
-    setPendingSearchTerm,
+    filters,
+    setFilters,
+    searchTerm,
+    setSearchTerm,
     organizations,
-    onApply,
     onClear,
-    onSearch,
     hasAppliedFilters,
-    hasPendingChanges,
 }) => {
-    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            onSearch();
-        }
-    };
-
     return (
         <>
             {/* Search Bar */}
             <div className={styles.searchBar}>
                 <input
                     type="text"
-                    placeholder="Search by name or mobile number..."
-                    value={pendingSearchTerm}
-                    onChange={(e) => setPendingSearchTerm(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
+                    placeholder="Search by name, mobile, or bib number..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className={styles.searchInput}
                 />
-                <Button onClick={onSearch}>
-                    Search
-                </Button>
             </div>
 
             {/* Filters */}
@@ -74,9 +58,9 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                                     label: org.name,
                                 })),
                             ]}
-                            value={pendingFilters.organization}
+                            value={filters.organization}
                             onChange={(e) =>
-                                setPendingFilters({ ...pendingFilters, organization: e.target.value })
+                                setFilters({ ...filters, organization: e.target.value })
                             }
                         />
                     </div>
@@ -90,9 +74,9 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                                 { value: '5K', label: '5K' },
                                 { value: '10K', label: '10K' },
                             ]}
-                            value={pendingFilters.category}
+                            value={filters.category}
                             onChange={(e) =>
-                                setPendingFilters({ ...pendingFilters, category: e.target.value })
+                                setFilters({ ...filters, category: e.target.value })
                             }
                         />
                     </div>
@@ -104,10 +88,11 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                                 { value: '', label: 'All Genders' },
                                 { value: 'Male', label: 'Male' },
                                 { value: 'Female', label: 'Female' },
+                                { value: 'Other', label: 'Other' },
                             ]}
-                            value={pendingFilters.gender}
+                            value={filters.gender}
                             onChange={(e) =>
-                                setPendingFilters({ ...pendingFilters, gender: e.target.value })
+                                setFilters({ ...filters, gender: e.target.value })
                             }
                         />
                     </div>
@@ -117,13 +102,13 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                             label="Swag Kit"
                             options={[
                                 { value: '', label: 'All' },
-                                { value: 'true', label: 'Received' },
-                                { value: 'false', label: 'Not Received' },
+                                { value: 'true', label: 'Given' },
+                                { value: 'false', label: 'Not Given' },
                             ]}
                             value={
-                                pendingFilters.swagKitGiven === undefined
+                                filters.swagKitGiven === undefined
                                     ? ''
-                                    : pendingFilters.swagKitGiven
+                                    : filters.swagKitGiven
                                         ? 'true'
                                         : 'false'
                             }
@@ -131,21 +116,15 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                                 const value = e.target.value;
                                 const swagKitGiven =
                                     value === '' ? undefined : value === 'true';
-                                setPendingFilters({ ...pendingFilters, swagKitGiven });
+                                setFilters({ ...filters, swagKitGiven });
                             }}
                         />
                     </div>
 
-                    <div className={styles.filterItem}>
-                        <Button onClick={onApply}>
-                            Apply Filters
-                        </Button>
-                    </div>
-
-                    {(hasAppliedFilters || hasPendingChanges) && (
+                    {hasAppliedFilters && (
                         <div className={styles.filterItem}>
                             <Button variant="danger" onClick={onClear}>
-                                Clear All
+                                Clear All Filters
                             </Button>
                         </div>
                     )}

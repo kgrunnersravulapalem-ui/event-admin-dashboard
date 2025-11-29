@@ -100,6 +100,7 @@ const initialFormData: Omit<Participant, 'id' | 'createdAt'> = {
   category: '3K',
   size: '',
   bibNumber: '',
+  swagKitGiven: false, // Default to false
 };
 
 /**
@@ -328,6 +329,21 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           onChange={handleChange}
           error={errors.bibNumber}
         />
+
+        {/* Swag Kit Toggle (Optional) */}
+        <div className={styles.swagFieldWrapper}>
+          <div className={styles.swagLabel}>Swag Kit Given(Optional)</div>
+          <label className={styles.toggleSwitch}>
+            <input
+              type="checkbox"
+              name="swagKitGiven"
+              checked={formData.swagKitGiven || false}
+              onChange={(e) => setFormData(prev => ({ ...prev, swagKitGiven: e.target.checked }))}
+              className={styles.toggleInput}
+            />
+            <span className={styles.toggleSlider}></span>
+          </label>
+        </div>
       </div>
 
       {/* Buttons */}
