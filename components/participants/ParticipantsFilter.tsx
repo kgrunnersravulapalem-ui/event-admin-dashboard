@@ -66,9 +66,9 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                 <div className={styles.filtersGrid}>
                     <div className={styles.filterItem}>
                         <Dropdown
-                            label="Organization"
+                            label="Organization/School"
                             options={[
-                                { value: '', label: 'All Organizations' },
+                                { value: '', label: 'All Organizations/Schools' },
                                 ...organizations.map((org) => ({
                                     value: org.name,
                                     label: org.name,

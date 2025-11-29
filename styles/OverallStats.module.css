@@ -141,12 +141,19 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-/* Organization Charts Grid */
+/* Organization/School Charts Grid */
 .orgChartsGrid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
     gap: 1.5rem;
 }
+
+/* When only one organization/school, limit to half width */
+.orgChartsGrid:has(:only-child) {
+    grid-template-columns: 1fr;
+    max-width: 50%;
+}
+
 
 .orgChartCard {
     background: white;

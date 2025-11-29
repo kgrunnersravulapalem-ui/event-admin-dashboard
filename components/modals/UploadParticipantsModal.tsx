@@ -144,7 +144,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
    * Get organization options for dropdown
    */
   const organizationOptions = [
-    { value: '', label: 'Select Organization' },
+    { value: '', label: 'Select Organization/School' },
     ...organizations.map(org => ({ value: org.name, label: org.name })),
   ];
 
@@ -154,12 +154,12 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
   const renderSelectStep = () => (
     <>
       <div className={styles.field}>
-        <label className={styles.label}>Organization *</label>
+        <label className={styles.label}>Organization/School *</label>
         <Dropdown
           options={organizationOptions}
           value={selectedOrganization}
           onChange={(e) => setSelectedOrganization(e.target.value)}
-          placeholder="Select Organization"
+          placeholder="Select Organization/School"
         />
       </div>
 
@@ -218,8 +218,8 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
         <code className={styles.headersList}>
           {EXPECTED_HEADERS.join(', ')}
         </code>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className={styles.sampleLink}
           onClick={downloadSampleCSV}
         >
@@ -248,7 +248,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
           )}
         </div>
         <p className={styles.orgLabel}>
-          Organization: <strong>{selectedOrganization}</strong>
+          Organization/School: <strong>{selectedOrganization}</strong>
         </p>
       </div>
 
@@ -324,7 +324,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
         Uploading participants...
       </p>
       <div className={styles.progressBar}>
-        <div 
+        <div
           className={styles.progressFill}
           style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
         />
@@ -413,7 +413,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={step === 'uploading' ? () => {} : handleClose}
+      onClose={step === 'uploading' ? () => { } : handleClose}
       title="Upload Participants"
       size="medium"
       footer={renderFooter()}

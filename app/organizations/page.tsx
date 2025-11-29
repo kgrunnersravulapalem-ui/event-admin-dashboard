@@ -183,11 +183,11 @@ export default function OrganizationsPage() {
       <div className={styles.container}>
         <div className={styles.header}>
           <div>
-            <h1 className={styles.title}>Organizations</h1>
+            <h1 className={styles.title}>Organizations/Schools</h1>
           </div>
           {!showForm && (
             <Button onClick={() => setShowForm(true)}>
-              + Add Organization
+              + Add Organization/School
             </Button>
           )}
         </div>

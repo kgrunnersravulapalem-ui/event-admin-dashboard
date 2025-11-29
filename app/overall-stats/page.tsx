@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Organization } from '@/types';
 import { getAllOrganizations } from '@/lib/organizationsService';
+import { kebabCase } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/OverallStats.module.css';
 import {
@@ -227,7 +228,7 @@ export default function OverallStatsPage() {
                             <div className={`${styles.summaryCard} ${styles.totalCard}`}>
                                 <div className={styles.summaryLabel}>Total Participants</div>
                                 <div className={styles.summaryValue}>{stats.totalParticipants}</div>
-                                <div className={styles.summarySubtext}>Across all organizations</div>
+                                <div className={styles.summarySubtext}>Across all organizations/schools</div>
                             </div>
 
                             <div className={`${styles.summaryCard} ${styles.swagCard}`}>
@@ -287,7 +288,7 @@ export default function OverallStatsPage() {
 
                         {/* Organization-Specific Breakdown */}
                         <div className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Organization Specific Breakdown</h2>
+                            <h2 className={styles.sectionTitle}>Organization/School Specific Breakdown</h2>
                             <div className={styles.orgChartsGrid}>
                                 {organizations.filter(org => org.stats).map(org => {
                                     const orgCombinedData = [
@@ -313,7 +314,7 @@ export default function OverallStatsPage() {
 
                                     return (
                                         <div key={org.id} className={styles.orgChartCard}>
-                                            <h3 className={styles.orgChartTitle}>{org.name}</h3>
+                                            <h3 className={styles.orgChartTitle}>{kebabCase(org.name)}</h3>
                                             <div className={styles.orgStats}>
                                                 <span>Total: {org.stats!.totalParticipants}</span>
                                                 <span>Swag: {org.stats!.swagKitTaken}</span>

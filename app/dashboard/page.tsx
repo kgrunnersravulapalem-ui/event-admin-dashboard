@@ -39,7 +39,7 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       const organizations = await getAllOrganizations();
-      
+
       // Calculate stats from organization data
       const calculatedStats: DashboardStats = {
         totalOrganizations: organizations.length,
@@ -48,7 +48,7 @@ export default function DashboardPage() {
         category5K: organizations.reduce((sum, org) => sum + (org.category5K || 0), 0),
         category10K: organizations.reduce((sum, org) => sum + (org.category10K || 0), 0),
       };
-      
+
       setStats(calculatedStats);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -84,7 +84,7 @@ export default function DashboardPage() {
             </div>
             <div className={styles.statContent}>
               <div className={styles.statValue}>{loading ? '...' : stats?.totalOrganizations || 0}</div>
-              <div className={styles.statLabel}>Organizations</div>
+              <div className={styles.statLabel}>Organizations/Schools</div>
             </div>
           </Card>
         </div>
@@ -99,9 +99,9 @@ export default function DashboardPage() {
             </div>
             {!loading && stats && stats.totalParticipants > 0 && (
               <div className={styles.progressBar}>
-                <div 
+                <div
                   className={styles.progressFill}
-                  style={{ 
+                  style={{
                     width: `${(stats.category3K / stats.totalParticipants) * 100}%`,
                     background: '#134e4a'
                   }}
@@ -117,9 +117,9 @@ export default function DashboardPage() {
             </div>
             {!loading && stats && stats.totalParticipants > 0 && (
               <div className={styles.progressBar}>
-                <div 
+                <div
                   className={styles.progressFill}
-                  style={{ 
+                  style={{
                     width: `${(stats.category5K / stats.totalParticipants) * 100}%`,
                     background: '#22c55e'
                   }}
@@ -135,9 +135,9 @@ export default function DashboardPage() {
             </div>
             {!loading && stats && stats.totalParticipants > 0 && (
               <div className={styles.progressBar}>
-                <div 
+                <div
                   className={styles.progressFill}
-                  style={{ 
+                  style={{
                     width: `${(stats.category10K / stats.totalParticipants) * 100}%`,
                     background: '#f59e0b'
                   }}
@@ -171,7 +171,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <div>
-                  <div className={styles.linkTitle}>Manage Organizations</div>
+                  <div className={styles.linkTitle}>Manage Organizations/Schools</div>
                   <div className={styles.linkDesc}>Add or edit organizations</div>
                 </div>
               </div>

@@ -103,7 +103,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                     </div>
                     <div>S.No</div>
                     <div>Name</div>
-                    <div>Organization</div>
+                    <div>Organization/School</div>
                     <div>Mobile</div>
                     <div>Gender</div>
                     <div>Category</div>

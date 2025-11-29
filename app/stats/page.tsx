@@ -164,9 +164,9 @@ export default function StatsPage() {
 
                 <div className={styles.controls}>
                     <Dropdown
-                        label="Select Organization"
+                        label="Select Organization/School"
                         options={[
-                            { value: '', label: 'Select an organization...' },
+                            { value: '', label: 'Select an organization/school...' },
                             ...organizations.map((org) => ({
                                 value: org.name,
                                 label: org.name,
@@ -181,7 +181,7 @@ export default function StatsPage() {
                     <div className={styles.loading}>Calculating detailed statistics...</div>
                 ) : !selectedOrg ? (
                     <div className={styles.emptyState}>
-                        <p>Please select an organization to view detailed statistics.</p>
+                        <p>Please select an organization/school to view detailed statistics.</p>
                     </div>
                 ) : stats ? (
                     <>

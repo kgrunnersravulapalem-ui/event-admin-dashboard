@@ -14,9 +14,8 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Button, Input, Dropdown, RadioGroup } from '@/components/ui';
 import { addParticipant, validateParticipant } from '@/lib/firestoreService';
-import { getAllOrganizations } from '@/lib/organizationsService';
 import { checkBibNumberDuplicate } from '@/lib/participantsService';
-import { Participant, Organization } from '@/types';
+import { Participant } from '@/types';
 import styles from '@/styles/EnrollmentForm.module.css';
 
 /**
@@ -238,16 +237,16 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
       <div className={styles.formGrid}>
         {/* Organization */}
         <Dropdown
-          label="Organization"
+          label="Organization/School"
           name="organization"
           options={[
-            { value: '', label: 'Select your organization' },
+            { value: '', label: 'Select your organization/school' },
             ...organizations.map((org) => ({
               value: org.name,
               label: org.name,
             })),
           ]}
-          placeholder="Select your organization"
+          placeholder="Select your organization/school"
           value={formData.organization}
           onChange={handleChange}
           error={errors.organization}

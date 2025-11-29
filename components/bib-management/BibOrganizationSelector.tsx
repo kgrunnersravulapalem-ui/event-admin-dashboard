@@ -33,7 +33,7 @@ const BibOrganizationSelector: React.FC<BibOrganizationSelectorProps> = ({
     currentTotal,
 }) => {
     const organizationOptions = [
-        { value: '', label: 'Select Organization' },
+        { value: '', label: 'Select Organization/School' },
         ...organizations.map(org => ({ value: org.name, label: org.name })),
     ];
 
@@ -44,7 +44,7 @@ const BibOrganizationSelector: React.FC<BibOrganizationSelectorProps> = ({
                 <div className={styles.selectionGrid}>
                     <div className={styles.field}>
                         <Dropdown
-                            label="Organization"
+                            label="Organization/School"
                             options={organizationOptions}
                             value={selectedOrganization}
                             onChange={(e) => onOrganizationChange(e.target.value)}
