@@ -33,6 +33,10 @@ import ParticipantsPagination from '@/components/participants/ParticipantsPagina
 import EditParticipantModal from '@/components/participants/EditParticipantModal';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Participants.module.css';
+import { useParticipants } from '@/hooks/useParticipants';
+
+// Feature flag for safe migration
+const USE_REALTIME_STORE = true;
 
 /**
  * Participants page component
@@ -90,6 +94,38 @@ export default function ParticipantsPage() {
 
   // Ref to track if organizations have been loaded (prevents double load in strict mode)
   const organizationsLoadedRef = useRef(false);
+
+  // Real-time Store Integration
+  const realtimeStore = useParticipants({
+    filters: {
+      organization: appliedFilters.organization,
+      category: appliedFilters.category,
+      gender: appliedFilters.gender,
+      swagKitGiven: appliedFilters.swagKitGiven,
+      searchTerm: appliedSearchTerm,
+    },
+    pageSize: itemsPerPage,
+    currentPage: currentPage,
+    autoInitialize: USE_REALTIME_STORE,
+  });
+
+  // Sync real-time store data to local state when enabled
+  useEffect(() => {
+    if (USE_REALTIME_STORE) {
+      setParticipants(realtimeStore.participants);
+      setTotalCount(realtimeStore.totalCount);
+      setLoading(realtimeStore.isLoading);
+      setHasMore(realtimeStore.hasNextPage);
+      // Note: We don't sync organizations here as they are loaded separately
+      // and the store might re-fetch them unnecessarily for the dropdown
+    }
+  }, [
+    USE_REALTIME_STORE,
+    realtimeStore.participants,
+    realtimeStore.totalCount,
+    realtimeStore.isLoading,
+    realtimeStore.hasNextPage
+  ]);
 
 
   /**
@@ -179,6 +215,9 @@ export default function ParticipantsPage() {
    * Load participants with pagination
    */
   const loadParticipants = async () => {
+    // If using real-time store, skip manual loading
+    if (USE_REALTIME_STORE) return;
+
     try {
       setLoading(true);
       const apiFilters = buildFilters();
@@ -517,8 +556,19 @@ export default function ParticipantsPage() {
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      const apiFilters = buildFilters();
-      const allParticipants = await getAllParticipants(apiFilters);
+
+      let allParticipants: Participant[];
+
+      if (USE_REALTIME_STORE && realtimeStore.allParticipants.length > 0) {
+        // Use cached data if available (saves reads)
+        // Apply current filters to all participants
+        allParticipants = realtimeStore.filteredParticipants;
+      } else {
+        // Fallback to fetching from API
+        const apiFilters = buildFilters();
+        allParticipants = await getAllParticipants(apiFilters);
+      }
+
       const csvContent = exportParticipantsToCSV(allParticipants);
       const filename = `participants_${new Date().toISOString().split('T')[0]}.csv`;
       downloadCSV(csvContent, filename);
