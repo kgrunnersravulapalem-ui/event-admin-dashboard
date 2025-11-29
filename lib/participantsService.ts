@@ -36,8 +36,7 @@ import {
   incrementOrgParticipantStats,
   decrementOrgParticipantStats,
   bulkDecrementOrgParticipantStats,
-  incrementOrgSwagKitStats,
-  decrementOrgSwagKitStats
+
 } from './organizationsService';
 
 const COLLECTION_NAME = 'participants';
@@ -67,10 +66,7 @@ export const addParticipant = async (
     // Update organization participant stats
     await incrementOrgParticipantStats(participant.organization, participant.category);
 
-    // Update organization swag kit stats if participant has swag kit
-    if (participant.swagKitGiven) {
-      await incrementOrgSwagKitStats(participant.organization);
-    }
+
 
     return docRef.id;
   } catch (error) {
@@ -123,10 +119,7 @@ export const deleteParticipant = async (id: string): Promise<void> => {
       // Update organization participant stats
       await decrementOrgParticipantStats(data.organization, data.category);
 
-      // Update organization swag kit stats if participant had swag kit
-      if (data.swagKitGiven) {
-        await decrementOrgSwagKitStats(data.organization);
-      }
+
     } else {
       throw new Error('Participant not found');
     }
@@ -695,11 +688,11 @@ export const toggleSwagKitStatus = async (
     // Get participant to know their organization and previous status
     const participantDoc = doc(db, COLLECTION_NAME, id);
     const participantSnap = await getDoc(participantDoc);
-    
+
     if (!participantSnap.exists()) {
       throw new Error('Participant not found');
     }
-    
+
     const organizationName = participantSnap.data().organization;
     const previousSwagStatus = participantSnap.data().swagKitGiven || false;
 
@@ -709,14 +702,7 @@ export const toggleSwagKitStatus = async (
       updatedAt: serverTimestamp(),
     });
 
-    // Update organization swag kit stats based on toggle
-    if (swagKitGiven && !previousSwagStatus) {
-      // Toggling ON: increment
-      await incrementOrgSwagKitStats(organizationName);
-    } else if (!swagKitGiven && previousSwagStatus) {
-      // Toggling OFF: decrement
-      await decrementOrgSwagKitStats(organizationName);
-    }
+
   } catch (error) {
     console.error('Error toggling swag kit status:', error);
     throw new Error('Failed to update swag kit status. Please try again.');

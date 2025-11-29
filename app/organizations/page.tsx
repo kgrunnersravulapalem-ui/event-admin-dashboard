@@ -10,11 +10,11 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button, Card, Input } from '@/components/ui';
 import { Organization } from '@/types';
-import { 
-  getAllOrganizations, 
-  addOrganization, 
-  updateOrganization, 
-  deleteOrganization 
+import {
+  getAllOrganizations,
+  addOrganization,
+  updateOrganization,
+  deleteOrganization
 } from '@/lib/organizationsService';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Organizations.module.css';
@@ -98,17 +98,17 @@ export default function OrganizationsPage() {
       if (editingId) {
         await updateOrganization(editingId, formData);
         toast.success('Organization updated successfully');
-        
+
         // Optimistically update local state instead of reloading
-        setOrganizations(prev => prev.map(org => 
-          org.id === editingId 
+        setOrganizations(prev => prev.map(org =>
+          org.id === editingId
             ? { ...org, ...formData }
             : org
         ));
       } else {
         const newId = await addOrganization(formData);
         toast.success('Organization added successfully');
-        
+
         // Add new organization to local state
         setOrganizations(prev => [...prev, {
           id: newId,
@@ -117,10 +117,10 @@ export default function OrganizationsPage() {
           category3K: 0,
           category5K: 0,
           category10K: 0,
-          swagKitTaken: 0,
+
         }]);
       }
-      
+
       setFormData({ name: '', code: '' });
       setShowForm(false);
       setEditingId(null);
@@ -135,7 +135,7 @@ export default function OrganizationsPage() {
    */
   const handleEdit = (org: Organization) => {
     if (!org.id) return;
-    
+
     setFormData({
       name: org.name,
       code: org.code,
@@ -238,7 +238,7 @@ export default function OrganizationsPage() {
               <div className={styles.statsHeader}>3K</div>
               <div className={styles.statsHeader}>5K</div>
               <div className={styles.statsHeader}>10K</div>
-              <div className={styles.swagHeader}>🎁 Swag</div>
+
               <div className={styles.statsHeader}>Actions</div>
             </div>
             {organizations.map((org) => (
@@ -248,7 +248,7 @@ export default function OrganizationsPage() {
                 <div className={styles.statValue}>{org.category3K || 0}</div>
                 <div className={styles.statValue}>{org.category5K || 0}</div>
                 <div className={styles.statValue}>{org.category10K || 0}</div>
-                <div className={styles.swagValue}>{org.swagKitTaken || 0}</div>
+
                 <div className={styles.actionsCell}>
                   <button
                     className={styles.menuButton}

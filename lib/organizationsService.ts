@@ -43,13 +43,13 @@ export const addOrganization = async (
 ): Promise<string> => {
   try {
     const orgsRef = getOrganizationsCollection();
-    
+
     const docRef = await addDoc(orgsRef, {
       ...organization,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    
+
     return docRef.id;
   } catch (error) {
     console.error('Error adding organization:', error);
@@ -66,7 +66,7 @@ export const updateOrganization = async (
 ): Promise<void> => {
   try {
     const orgDoc = doc(db, COLLECTION_NAME, id);
-    
+
     await updateDoc(orgDoc, {
       ...data,
       updatedAt: serverTimestamp(),
@@ -98,7 +98,7 @@ export const getAllOrganizations = async (): Promise<Organization[]> => {
     const orgsRef = getOrganizationsCollection();
     const q = query(orgsRef, orderBy('name', 'asc'));
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -109,7 +109,7 @@ export const getAllOrganizations = async (): Promise<Organization[]> => {
         category3K: data.category3K || 0,
         category5K: data.category5K || 0,
         category10K: data.category10K || 0,
-        swagKitTaken: data.swagKitTaken || 0,
+
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
       };
@@ -127,7 +127,7 @@ export const getOrganizationById = async (id: string): Promise<Organization | nu
   try {
     const orgDoc = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(orgDoc);
-    
+
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
@@ -138,12 +138,12 @@ export const getOrganizationById = async (id: string): Promise<Organization | nu
         category3K: data.category3K || 0,
         category5K: data.category5K || 0,
         category10K: data.category10K || 0,
-        swagKitTaken: data.swagKitTaken || 0,
+
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
       };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error fetching organization:', error);
@@ -160,17 +160,17 @@ export const validateOrganization = (
   if (!organization.name || organization.name.trim() === '') {
     return 'Organization name is required';
   }
-  
+
   if (!organization.code || organization.code.trim() === '') {
     return 'Organization code is required';
   }
-  
+
   // Validate code format (alphanumeric, no spaces)
   const codeRegex = /^[A-Z0-9]+$/;
   if (!codeRegex.test(organization.code)) {
     return 'Organization code must be uppercase alphanumeric without spaces';
   }
-  
+
   return null;
 };
 
@@ -182,11 +182,11 @@ export const getOrganizationByName = async (name: string): Promise<Organization 
     const orgsRef = getOrganizationsCollection();
     const q = query(orgsRef, where('name', '==', name));
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) {
       return null;
     }
-    
+
     const docSnap = querySnapshot.docs[0];
     const data = docSnap.data();
     return {
@@ -219,10 +219,10 @@ export const incrementOrgParticipantStats = async (
       console.warn(`Organization not found: ${organizationName}`);
       return;
     }
-    
+
     const orgDoc = doc(db, COLLECTION_NAME, org.id);
     const categoryField = `category${category}`;
-    
+
     await updateDoc(orgDoc, {
       totalParticipants: increment(1),
       [categoryField]: increment(1),
@@ -247,10 +247,10 @@ export const decrementOrgParticipantStats = async (
       console.warn(`Organization not found: ${organizationName}`);
       return;
     }
-    
+
     const orgDoc = doc(db, COLLECTION_NAME, org.id);
     const categoryField = `category${category}`;
-    
+
     await updateDoc(orgDoc, {
       totalParticipants: increment(-1),
       [categoryField]: increment(-1),
@@ -270,17 +270,17 @@ export const bulkIncrementOrgParticipantStats = async (
   count: number
 ): Promise<void> => {
   if (count <= 0) return;
-  
+
   try {
     const org = await getOrganizationByName(organizationName);
     if (!org?.id) {
       console.warn(`Organization not found: ${organizationName}`);
       return;
     }
-    
+
     const orgDoc = doc(db, COLLECTION_NAME, org.id);
     const categoryField = `category${category}`;
-    
+
     await updateDoc(orgDoc, {
       totalParticipants: increment(count),
       [categoryField]: increment(count),
@@ -300,17 +300,17 @@ export const bulkDecrementOrgParticipantStats = async (
   count: number
 ): Promise<void> => {
   if (count <= 0) return;
-  
+
   try {
     const org = await getOrganizationByName(organizationName);
     if (!org?.id) {
       console.warn(`Organization not found: ${organizationName}`);
       return;
     }
-    
+
     const orgDoc = doc(db, COLLECTION_NAME, org.id);
     const categoryField = `category${category}`;
-    
+
     await updateDoc(orgDoc, {
       totalParticipants: increment(-count),
       [categoryField]: increment(-count),
@@ -321,44 +321,4 @@ export const bulkDecrementOrgParticipantStats = async (
   }
 };
 
-/**
- * Increment swag kit count for an organization
- */
-export const incrementOrgSwagKitStats = async (organizationName: string): Promise<void> => {
-  try {
-    const org = await getOrganizationByName(organizationName);
-    if (!org?.id) {
-      console.warn(`Organization not found: ${organizationName}`);
-      return;
-    }
 
-    const orgDoc = doc(db, COLLECTION_NAME, org.id);
-    await updateDoc(orgDoc, {
-      swagKitTaken: increment(1),
-      updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.error('Error incrementing org swag kit stats:', error);
-  }
-};
-
-/**
- * Decrement swag kit count for an organization
- */
-export const decrementOrgSwagKitStats = async (organizationName: string): Promise<void> => {
-  try {
-    const org = await getOrganizationByName(organizationName);
-    if (!org?.id) {
-      console.warn(`Organization not found: ${organizationName}`);
-      return;
-    }
-
-    const orgDoc = doc(db, COLLECTION_NAME, org.id);
-    await updateDoc(orgDoc, {
-      swagKitTaken: increment(-1),
-      updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.error('Error decrementing org swag kit stats:', error);
-  }
-};
