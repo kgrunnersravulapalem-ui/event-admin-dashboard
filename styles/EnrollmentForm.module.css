@@ -78,22 +78,22 @@
   border: 1px solid #fecaca;
 }
 
-/* Swag Kit Toggle - iOS Style (matching participants table) */
+/* Swag Kit Toggle - Input Box Style */
 .swagFieldWrapper {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-  grid-column: 1 / -1;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* padding: 0.75rem 1rem; */
+  background-color: white;
+  /* border-radius: 6px; */
+  /* border: 1px solid #e2e8f0; */
+  transition: border-color 0.15s;
 }
 
 .swagLabel {
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+  /* margin-bottom: 0.25rem; */
 }
 
 .toggleSwitch {

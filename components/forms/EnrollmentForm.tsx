@@ -307,7 +307,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
         // autoComplete="tel"
         />
 
-        {/* Size */}
+        {/* T-Shirt Size */}
         <RadioGroup
           label="T-Shirt Size"
           name="size"
@@ -319,30 +319,33 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           required
         />
 
-        {/* Bib Number (Optional) */}
-        <Input
-          label="Bib Number (Optional)"
-          name="bibNumber"
-          type="text"
-          placeholder="e.g., 3K-101"
-          value={formData.bibNumber || ''}
-          onChange={handleChange}
-          error={errors.bibNumber}
-        />
+        {/* Bib Number and Swag Kit Row */}
+        <div className={styles.rowGroup}>
+          {/* Bib Number (Optional) */}
+          <Input
+            label="Bib Number (Optional)"
+            name="bibNumber"
+            type="text"
+            placeholder="e.g., 3K-101"
+            value={formData.bibNumber || ''}
+            onChange={handleChange}
+            error={errors.bibNumber}
+          />
 
-        {/* Swag Kit Toggle (Optional) */}
-        <div className={styles.swagFieldWrapper}>
-          <div className={styles.swagLabel}>Swag Kit Given(Optional)</div>
-          <label className={styles.toggleSwitch}>
-            <input
-              type="checkbox"
-              name="swagKitGiven"
-              checked={formData.swagKitGiven || false}
-              onChange={(e) => setFormData(prev => ({ ...prev, swagKitGiven: e.target.checked }))}
-              className={styles.toggleInput}
-            />
-            <span className={styles.toggleSlider}></span>
-          </label>
+          {/* Swag Kit Toggle (Optional) */}
+          <div className={styles.swagFieldWrapper}>
+            <div className={styles.swagLabel}>Swag Kit Given (Optional)</div>
+            <label className={styles.toggleSwitch}>
+              <input
+                type="checkbox"
+                name="swagKitGiven"
+                checked={formData.swagKitGiven || false}
+                onChange={(e) => setFormData(prev => ({ ...prev, swagKitGiven: e.target.checked }))}
+                className={styles.toggleInput}
+              />
+              <span className={styles.toggleSlider}></span>
+            </label>
+          </div>
         </div>
       </div>
 
