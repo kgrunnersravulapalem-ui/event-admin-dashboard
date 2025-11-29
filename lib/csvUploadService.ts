@@ -6,7 +6,7 @@
  * @module csvUploadService
  */
 
-import { 
+import {
   collection,
   writeBatch,
   serverTimestamp,
@@ -76,7 +76,7 @@ const normalizeHeader = (header: string): string => {
 export const validateHeaders = (headers: string[]): { valid: boolean; message: string } => {
   const normalizedHeaders = headers.map(normalizeHeader);
   const expectedNormalized = EXPECTED_HEADERS.map(h => normalizeHeader(h));
-  
+
   if (normalizedHeaders.length !== expectedNormalized.length) {
     return {
       valid: false,
@@ -106,7 +106,7 @@ const parseCSVLine = (line: string): string[] => {
 
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
-    
+
     if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === ',' && !inQuotes) {
@@ -117,7 +117,7 @@ const parseCSVLine = (line: string): string[] => {
     }
   }
   result.push(current.trim());
-  
+
   return result;
 };
 
@@ -127,12 +127,12 @@ const parseCSVLine = (line: string): string[] => {
  */
 const normalizeGender = (value: string): 'Male' | 'Female' | 'Other' | null => {
   const normalized = value.trim().toUpperCase();
-  
+
   // Handle single letter and full word variations
   if (normalized === 'M' || normalized === 'MALE') return 'Male';
   if (normalized === 'F' || normalized === 'FEMALE') return 'Female';
   if (normalized === 'O' || normalized === 'OTHER') return 'Other';
-  
+
   return null;
 };
 
@@ -142,17 +142,17 @@ const normalizeGender = (value: string): 'Male' | 'Female' | 'Other' | null => {
  */
 const normalizeCategory = (value: string): '3K' | '5K' | '10K' | null => {
   const normalized = value.trim().toUpperCase().replace(/\s+/g, '');
-  
+
   // Handle numeric values without K suffix
   if (normalized === '3') return '3K';
   if (normalized === '5') return '5K';
   if (normalized === '10') return '10K';
-  
+
   // Handle values with K suffix
   if (normalized === '3K') return '3K';
   if (normalized === '5K') return '5K';
   if (normalized === '10K') return '10K';
-  
+
   return null;
 };
 
@@ -180,7 +180,7 @@ export const parseCSVContent = (content: string): CSVParseResult => {
   // Parse headers
   const headers = parseCSVLine(lines[0]);
   const headerValidation = validateHeaders(headers);
-  
+
   if (!headerValidation.valid) {
     return { success: false, data: [], errors: [headerValidation.message], warnings: [] };
   }
@@ -194,54 +194,70 @@ export const parseCSVContent = (content: string): CSVParseResult => {
     const values = parseCSVLine(line);
 
     if (values.length !== EXPECTED_HEADERS.length) {
-      errors.push(`Row ${rowNumber}: Expected ${EXPECTED_HEADERS.length} columns, found ${values.length}`);
-      continue;
+      warnings.push(`Row ${rowNumber}: Expected ${EXPECTED_HEADERS.length} columns, found ${values.length}. Will use defaults for missing columns.`);
+      // Pad with empty strings if needed
+      while (values.length < EXPECTED_HEADERS.length) {
+        values.push('');
+      }
     }
 
     const [name, gender, mobileNumber, category, size] = values;
 
-    // Validate name
+    // Skip completely empty rows
+    if (!name && !gender && !mobileNumber && !category && !size) {
+      warnings.push(`Row ${rowNumber}: Completely empty row, skipping`);
+      continue;
+    }
+
+    // Validate name - use placeholder if missing
+    const finalName = name && name.trim().length > 0
+      ? name.trim()
+      : `Participant-${rowNumber}`;
+
     if (!name || name.trim().length === 0) {
-      errors.push(`Row ${rowNumber}: Name is required`);
-      continue;
+      warnings.push(`Row ${rowNumber}: Name is missing, using "${finalName}"`);
     }
 
-    // Validate gender
-    const normalizedGender = normalizeGender(gender);
+    // Validate gender - use default if invalid
+    let normalizedGender = normalizeGender(gender);
     if (!normalizedGender) {
-      errors.push(`Row ${rowNumber}: Invalid gender "${gender}". Must be Male, Female, or Other`);
-      continue;
+      normalizedGender = 'Male'; // Default to Male
+      warnings.push(`Row ${rowNumber}: Invalid or missing gender "${gender}", defaulting to "Male"`);
     }
 
-    // Validate mobile number
+    // Validate mobile number - use placeholder if invalid
+    let finalMobileNumber = mobileNumber;
     if (!validateMobileNumber(mobileNumber)) {
-      errors.push(`Row ${rowNumber}: Invalid mobile number "${mobileNumber}"`);
-      continue;
+      finalMobileNumber = '0000000000'; // Placeholder
+      warnings.push(`Row ${rowNumber}: Invalid or missing mobile number "${mobileNumber}", using placeholder "0000000000"`);
+    } else {
+      finalMobileNumber = mobileNumber.replace(/\D/g, '').slice(-10); // Keep last 10 digits
     }
 
-    // Validate category
-    const normalizedCategory = normalizeCategory(category);
+    // Validate category - use default if invalid
+    let normalizedCategory = normalizeCategory(category);
     if (!normalizedCategory) {
-      errors.push(`Row ${rowNumber}: Invalid category "${category}". Must be 3K, 5K, or 10K`);
-      continue;
+      normalizedCategory = '5K'; // Default to 5K
+      warnings.push(`Row ${rowNumber}: Invalid or missing category "${category}", defaulting to "5K"`);
     }
 
-    // Size is optional but we'll keep it
-    if (!size || size.trim().length === 0) {
-      warnings.push(`Row ${rowNumber}: Size is empty for "${name}"`);
+    // Size is optional
+    const finalSize = size?.trim() || '';
+    if (!finalSize) {
+      warnings.push(`Row ${rowNumber}: Size is empty for "${finalName}"`);
     }
 
     data.push({
-      name: name.trim(),
+      name: finalName,
       gender: normalizedGender,
-      mobileNumber: mobileNumber.replace(/\D/g, '').slice(-10), // Keep last 10 digits
+      mobileNumber: finalMobileNumber,
       category: normalizedCategory,
-      size: size?.trim() || '',
+      size: finalSize,
     });
   }
 
   return {
-    success: errors.length === 0,
+    success: data.length > 0, // Success if we have at least one row
     data,
     errors,
     warnings,
@@ -259,18 +275,18 @@ export const bulkUploadParticipants = async (
 ): Promise<BulkUploadResult> => {
   const errors: string[] = [];
   const BATCH_SIZE = 500; // Firestore batch limit
-  
+
   try {
     const participantsRef = collection(db, 'participants');
-    
+
     // Track stats for bulk update
     const statsMap: Map<string, number> = new Map();
-    
+
     // Process in batches
     for (let i = 0; i < participants.length; i += BATCH_SIZE) {
       const batch = writeBatch(db);
       const batchParticipants = participants.slice(i, i + BATCH_SIZE);
-      
+
       batchParticipants.forEach((participant) => {
         const docRef = doc(participantsRef);
         batch.set(docRef, {
@@ -281,22 +297,22 @@ export const bulkUploadParticipants = async (
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
-        
+
         // Track category counts for stats
         const category = participant.category;
         statsMap.set(category, (statsMap.get(category) || 0) + 1);
       });
-      
+
       await batch.commit();
       onProgress?.(Math.min(i + BATCH_SIZE, participants.length), participants.length);
     }
-    
+
     // Update organization stats in bulk
-    const statsPromises = Array.from(statsMap.entries()).map(([category, count]) => 
+    const statsPromises = Array.from(statsMap.entries()).map(([category, count]) =>
       bulkIncrementOrgParticipantStats(organization, category as '3K' | '5K' | '10K', count)
     );
     await Promise.all(statsPromises);
-    
+
     return {
       success: true,
       totalProcessed: participants.length,
@@ -307,7 +323,7 @@ export const bulkUploadParticipants = async (
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     errors.push(`Batch upload failed: ${message}`);
-    
+
     return {
       success: false,
       totalProcessed: participants.length,
