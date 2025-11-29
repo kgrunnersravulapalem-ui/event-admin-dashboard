@@ -9,34 +9,14 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Dropdown } from '@/components/ui';
-import { Organization, Participant } from '@/types';
-import { getAllOrganizations } from '@/lib/organizationsService';
+import { Organization, Participant, OrganizationStats } from '@/types';
+import { getAllOrganizations, updateOrganizationStats } from '@/lib/organizationsService';
 import { getParticipantsByOrganization } from '@/lib/participantsService';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Stats.module.css';
 
-interface StatsData {
-    totalParticipants: number;
-    swagKitTaken: number;
-
-    // 3K Stats
-    total3K: number;
-    male3K: number;
-    female3K: number;
-    swag3K: number;
-
-    // 5K Stats
-    total5K: number;
-    male5K: number;
-    female5K: number;
-    swag5K: number;
-
-    // 10K Stats
-    total10K: number;
-    male10K: number;
-    female10K: number;
-    swag10K: number;
-}
+// Use the shared interface
+type StatsData = OrganizationStats;
 
 export default function StatsPage() {
     const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -116,6 +96,15 @@ export default function StatsPage() {
                 });
 
                 setStats(newStats);
+
+                // Persist stats to organization
+                const org = organizations.find(o => o.name === selectedOrg);
+                if (org && org.id) {
+                    // Fire and forget update to avoid blocking UI
+                    updateOrganizationStats(org.id, newStats).catch(err =>
+                        console.error('Failed to persist stats:', err)
+                    );
+                }
             } catch (error) {
                 toast.error('Failed to calculate statistics');
                 console.error(error);

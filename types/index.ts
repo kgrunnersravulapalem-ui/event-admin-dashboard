@@ -29,4 +29,4 @@ export interface OrganizationOption {
 }
 
 // Re-export organization types
-export type { Organization } from './organization';
+export type { Organization, OrganizationStats } from './organization';

@@ -24,7 +24,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Organization } from '@/types';
+import { Organization, OrganizationStats } from '@/types';
 
 const COLLECTION_NAME = 'organizations';
 
@@ -109,6 +109,7 @@ export const getAllOrganizations = async (): Promise<Organization[]> => {
         category3K: data.category3K || 0,
         category5K: data.category5K || 0,
         category10K: data.category10K || 0,
+        stats: data.stats,
 
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
@@ -138,6 +139,7 @@ export const getOrganizationById = async (id: string): Promise<Organization | nu
         category3K: data.category3K || 0,
         category5K: data.category5K || 0,
         category10K: data.category10K || 0,
+        stats: data.stats,
 
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
@@ -197,6 +199,7 @@ export const getOrganizationByName = async (name: string): Promise<Organization 
       category3K: data.category3K || 0,
       category5K: data.category5K || 0,
       category10K: data.category10K || 0,
+      stats: data.stats,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
       updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
     };
@@ -318,6 +321,26 @@ export const bulkDecrementOrgParticipantStats = async (
     });
   } catch (error) {
     console.error('Error bulk decrementing org participant stats:', error);
+  }
+};
+
+/**
+ * Update organization detailed stats
+ */
+export const updateOrganizationStats = async (
+  id: string,
+  stats: OrganizationStats
+): Promise<void> => {
+  try {
+    const orgDoc = doc(db, COLLECTION_NAME, id);
+
+    await updateDoc(orgDoc, {
+      stats,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error updating organization stats:', error);
+    throw new Error('Failed to update organization stats.');
   }
 };
 
