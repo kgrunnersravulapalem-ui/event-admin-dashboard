@@ -438,7 +438,7 @@ export default function OverallStatsPage() {
                                             <h3 className={styles.orgChartTitle}>{kebabCase(org.name)}</h3>
                                             <div className={styles.orgStats}>
                                                 <span>Total: {org.stats!.totalParticipants}</span>
-                                                <span>Swag: {org.stats!.swagKitTaken}</span>
+                                                <span>Swag taken: {org.stats!.swagKitTaken}</span>
                                             </div>
                                             <ResponsiveContainer width="100%" height={400}>
                                                 <BarChart data={orgCombinedData}>
