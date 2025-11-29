@@ -46,6 +46,7 @@ export default function ParticipantsPage() {
   const [pendingFilters, setPendingFilters] = useState({
     organization: '',
     category: '',
+    gender: '',
     swagKitGiven: undefined as boolean | undefined,
   });
   const [pendingSearchTerm, setPendingSearchTerm] = useState('');
@@ -54,6 +55,7 @@ export default function ParticipantsPage() {
   const [appliedFilters, setAppliedFilters] = useState({
     organization: '',
     category: '',
+    gender: '',
     swagKitGiven: undefined as boolean | undefined,
   });
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
@@ -101,6 +103,9 @@ export default function ParticipantsPage() {
     }
     if (appliedFilters.category) {
       apiFilters.category = appliedFilters.category;
+    }
+    if (appliedFilters.gender) {
+      apiFilters.gender = appliedFilters.gender;
     }
     if (appliedFilters.swagKitGiven !== undefined) {
       apiFilters.swagKitGiven = appliedFilters.swagKitGiven;
@@ -555,12 +560,14 @@ export default function ParticipantsPage() {
     setPendingFilters({
       organization: '',
       category: '',
+      gender: '',
       swagKitGiven: undefined,
     });
     setAppliedSearchTerm('');
     setAppliedFilters({
       organization: '',
       category: '',
+      gender: '',
       swagKitGiven: undefined,
     });
     setCurrentPage(1);
@@ -572,6 +579,7 @@ export default function ParticipantsPage() {
     appliedSearchTerm ||
     appliedFilters.organization ||
     appliedFilters.category ||
+    appliedFilters.gender ||
     appliedFilters.swagKitGiven !== undefined;
 
   // Check if pending filters differ from applied (show apply button)
@@ -579,6 +587,7 @@ export default function ParticipantsPage() {
     pendingSearchTerm !== appliedSearchTerm ||
     pendingFilters.organization !== appliedFilters.organization ||
     pendingFilters.category !== appliedFilters.category ||
+    pendingFilters.gender !== appliedFilters.gender ||
     pendingFilters.swagKitGiven !== appliedFilters.swagKitGiven;
 
   const handlePageChange = (page: number) => {

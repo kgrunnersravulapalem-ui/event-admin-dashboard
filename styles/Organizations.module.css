@@ -73,7 +73,7 @@
 .listHeader {
   padding: 0.5rem 1rem;
   display: grid;
-  grid-template-columns: 2fr 60px 60px 60px 60px 120px 50px;
+  grid-template-columns: 2fr 60px 60px 60px 120px 50px;
   gap: 0.75rem;
   font-size: 0.6875rem;
   font-weight: 600;
@@ -91,7 +91,7 @@
 .orgCard {
   padding: 0.5rem 1rem;
   display: grid;
-  grid-template-columns: 2fr 60px 60px 60px 60px 120px 50px;
+  grid-template-columns: 2fr 60px 60px 60px 120px 50px;
   gap: 0.75rem;
   align-items: center;
   border-bottom: 1px solid #f1f5f9;
@@ -238,7 +238,7 @@
 /* Tablet */
 @media (max-width: 768px) {
   .listHeader {
-    grid-template-columns: 2fr 60px 60px 60px 60px 100px 100px;
+    grid-template-columns: 2fr 60px 60px 60px 100px 100px;
     display: grid;
   }
 

@@ -7,11 +7,13 @@ interface ParticipantsFilterProps {
     pendingFilters: {
         organization: string;
         category: string;
+        gender: string;
         swagKitGiven: boolean | undefined;
     };
     setPendingFilters: (filters: {
         organization: string;
         category: string;
+        gender: string;
         swagKitGiven: boolean | undefined;
     }) => void;
     pendingSearchTerm: string;
@@ -91,6 +93,21 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                             value={pendingFilters.category}
                             onChange={(e) =>
                                 setPendingFilters({ ...pendingFilters, category: e.target.value })
+                            }
+                        />
+                    </div>
+
+                    <div className={styles.filterItem}>
+                        <Dropdown
+                            label="Gender"
+                            options={[
+                                { value: '', label: 'All Genders' },
+                                { value: 'Male', label: 'Male' },
+                                { value: 'Female', label: 'Female' },
+                            ]}
+                            value={pendingFilters.gender}
+                            onChange={(e) =>
+                                setPendingFilters({ ...pendingFilters, gender: e.target.value })
                             }
                         />
                     </div>
