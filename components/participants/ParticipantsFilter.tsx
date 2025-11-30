@@ -9,12 +9,16 @@ interface ParticipantsFilterProps {
         category: string;
         gender: string;
         swagKitGiven: boolean | undefined;
+        startDate?: Date;
+        endDate?: Date;
     };
     setFilters: (filters: {
         organization: string;
         category: string;
         gender: string;
         swagKitGiven: boolean | undefined;
+        startDate?: Date;
+        endDate?: Date;
     }) => void;
     searchTerm: string;
     setSearchTerm: (term: string) => void;
@@ -117,6 +121,32 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                                 const swagKitGiven =
                                     value === '' ? undefined : value === 'true';
                                 setFilters({ ...filters, swagKitGiven });
+                            }}
+                        />
+                    </div>
+
+                    <div className={styles.filterItem}>
+                        <label className={styles.filterLabel}>From Date</label>
+                        <input
+                            type="date"
+                            className={styles.dateInput}
+                            value={filters.startDate ? filters.startDate.toISOString().split('T')[0] : ''}
+                            onChange={(e) => {
+                                const date = e.target.value ? new Date(e.target.value) : undefined;
+                                setFilters({ ...filters, startDate: date });
+                            }}
+                        />
+                    </div>
+
+                    <div className={styles.filterItem}>
+                        <label className={styles.filterLabel}>To Date</label>
+                        <input
+                            type="date"
+                            className={styles.dateInput}
+                            value={filters.endDate ? filters.endDate.toISOString().split('T')[0] : ''}
+                            onChange={(e) => {
+                                const date = e.target.value ? new Date(e.target.value) : undefined;
+                                setFilters({ ...filters, endDate: date });
                             }}
                         />
                     </div>

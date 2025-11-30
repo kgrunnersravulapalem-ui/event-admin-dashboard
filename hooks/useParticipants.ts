@@ -21,6 +21,8 @@ export interface UseParticipantsFilters {
     gender?: string;
     swagKitGiven?: boolean;
     searchTerm?: string;
+    startDate?: Date;
+    endDate?: Date;
 }
 
 export interface UseParticipantsOptions {
@@ -118,6 +120,27 @@ export function useParticipants(options: UseParticipantsOptions = {}): UsePartic
         // Swag kit filter
         if (filters.swagKitGiven !== undefined) {
             result = result.filter(p => p.swagKitGiven === filters.swagKitGiven);
+        }
+
+        // Date range filters
+        if (filters.startDate) {
+            const startDate = new Date(filters.startDate);
+            startDate.setHours(0, 0, 0, 0);
+            result = result.filter(p => {
+                if (!p.createdAt) return false;
+                const enrollDate = new Date(p.createdAt);
+                enrollDate.setHours(0, 0, 0, 0);
+                return enrollDate >= startDate;
+            });
+        }
+
+        if (filters.endDate) {
+            const endDate = new Date(filters.endDate);
+            endDate.setHours(23, 59, 59, 999);
+            result = result.filter(p => {
+                if (!p.createdAt) return false;
+                return new Date(p.createdAt) <= endDate;
+            });
         }
 
         // Search term filter (Excel-like search across ALL participants)

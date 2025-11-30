@@ -52,6 +52,8 @@ export default function ParticipantsPage() {
     category: '',
     gender: '',
     swagKitGiven: undefined as boolean | undefined,
+    startDate: undefined as Date | undefined,
+    endDate: undefined as Date | undefined,
   });
 
   // Search term with debounce
@@ -106,6 +108,8 @@ export default function ParticipantsPage() {
         category: '',
         gender: '',
         swagKitGiven: undefined,
+        startDate: undefined,
+        endDate: undefined,
       });
     }
   }, [searchTerm]);
@@ -118,6 +122,8 @@ export default function ParticipantsPage() {
       gender: filters.gender,
       swagKitGiven: filters.swagKitGiven,
       searchTerm: debouncedSearchTerm,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
     },
     pageSize: itemsPerPage,
     currentPage: currentPage,
@@ -160,6 +166,12 @@ export default function ParticipantsPage() {
     }
     if (filters.swagKitGiven !== undefined) {
       apiFilters.swagKitGiven = filters.swagKitGiven;
+    }
+    if (filters.startDate) {
+      apiFilters.startDate = filters.startDate;
+    }
+    if (filters.endDate) {
+      apiFilters.endDate = filters.endDate;
     }
     if (debouncedSearchTerm) {
       apiFilters.searchTerm = debouncedSearchTerm;
@@ -614,6 +626,8 @@ export default function ParticipantsPage() {
       category: '',
       gender: '',
       swagKitGiven: undefined,
+      startDate: undefined,
+      endDate: undefined,
     });
     setCurrentPage(1);
     setPageCursors([null]); // Reset cursors
@@ -625,7 +639,9 @@ export default function ParticipantsPage() {
     filters.organization ||
     filters.category ||
     filters.gender ||
-    filters.swagKitGiven !== undefined;
+    filters.swagKitGiven !== undefined ||
+    filters.startDate ||
+    filters.endDate;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -662,7 +678,7 @@ export default function ParticipantsPage() {
 
         <ParticipantsFilter
           filters={filters}
-          setFilters={setFilters}
+          setFilters={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           organizations={organizations}
