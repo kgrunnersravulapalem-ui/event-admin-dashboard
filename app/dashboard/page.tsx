@@ -10,9 +10,9 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui';
 import Link from 'next/link';
-import { getAllOrganizations } from '@/lib/organizationsService';
 import styles from '@/styles/Dashboard.module.css';
 import { useParticipants } from '@/hooks/useParticipants';
+import { useOrganizations } from '@/hooks/useOrganizations';
 
 // Feature flag for safe migration
 const USE_REALTIME_STORE = true;
@@ -44,82 +44,40 @@ export default function DashboardPage() {
     autoInitialize: USE_REALTIME_STORE
   });
 
+  const {
+    allOrganizations,
+    isLoading: isOrgsLoading,
+  } = useOrganizations({
+    autoInitialize: USE_REALTIME_STORE
+  });
+
   useEffect(() => {
-    loadData();
+    // Stats are now calculated from real-time stores
+    // in the updateStatsFromRealtimeData effect
   }, []);
 
   // Recalculate stats when real-time data changes
   useEffect(() => {
-    if (USE_REALTIME_STORE && allParticipants.length > 0) {
+    if (USE_REALTIME_STORE && (allParticipants.length > 0 || allOrganizations.length > 0)) {
       updateStatsFromRealtimeData();
     }
-  }, [USE_REALTIME_STORE, allParticipants]);
+  }, [USE_REALTIME_STORE, allParticipants, allOrganizations]);
 
-  const updateStatsFromRealtimeData = async () => {
-    try {
-      // We still need organization count
-      // OPTIMIZATION: If we have organizations in store (future), use that.
-      // For now, we fetch orgs but rely on persistence to make it fast.
-      const organizations = await getAllOrganizations();
+  const updateStatsFromRealtimeData = () => {
+    // Calculate stats from real-time stores
+    const calculatedStats: DashboardStats = {
+      totalOrganizations: allOrganizations.length,
+      totalParticipants: allParticipants.length,
+      category3K: allParticipants.filter(p => p.category === '3K').length,
+      category5K: allParticipants.filter(p => p.category === '5K').length,
+      category10K: allParticipants.filter(p => p.category === '10K').length,
+    };
 
-      const calculatedStats: DashboardStats = {
-        totalOrganizations: organizations.length,
-        totalParticipants: allParticipants.length,
-        category3K: allParticipants.filter(p => p.category === '3K').length,
-        category5K: allParticipants.filter(p => p.category === '5K').length,
-        category10K: allParticipants.filter(p => p.category === '10K').length,
-      };
-
-      setStats(calculatedStats);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error updating stats from real-time data:', error);
-    }
+    setStats(calculatedStats);
+    setLoading(false);
   };
 
-  const loadData = async () => {
-    // If using real-time store, we handle loading in the other effect
-    // But we still need initial organization count
-    if (USE_REALTIME_STORE) {
-      // OPTIMIZATION: Only fetch if we don't have stats yet
-      if (!stats) {
-        try {
-          const organizations = await getAllOrganizations();
-          setStats(prev => ({
-            ...prev,
-            totalOrganizations: organizations.length,
-            totalParticipants: prev?.totalParticipants || 0,
-            category3K: prev?.category3K || 0,
-            category5K: prev?.category5K || 0,
-            category10K: prev?.category10K || 0,
-          }));
-        } catch (error) {
-          console.error('Error loading organizations:', error);
-        }
-      }
-      return;
-    }
 
-    try {
-      setLoading(true);
-      const organizations = await getAllOrganizations();
-
-      // Calculate stats from organization data
-      const calculatedStats: DashboardStats = {
-        totalOrganizations: organizations.length,
-        totalParticipants: organizations.reduce((sum, org) => sum + (org.totalParticipants || 0), 0),
-        category3K: organizations.reduce((sum, org) => sum + (org.category3K || 0), 0),
-        category5K: organizations.reduce((sum, org) => sum + (org.category5K || 0), 0),
-        category10K: organizations.reduce((sum, org) => sum + (org.category10K || 0), 0),
-      };
-
-      setStats(calculatedStats);
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <DashboardLayout>

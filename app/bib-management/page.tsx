@@ -23,6 +23,7 @@ import { getAllOrganizations } from '@/lib/organizationsService';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/BibManagement.module.css';
 import { useParticipants } from '@/hooks/useParticipants';
+import { useOrganizations } from '@/hooks/useOrganizations';
 
 // Feature flag for safe migration
 const USE_REALTIME_STORE = true;
@@ -45,7 +46,22 @@ type CategoryData = {
  * Bib Management page component
  */
 export default function BibManagementPage() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  // Real-time Store Integration
+  const {
+    allParticipants,
+    isLoading: isStoreLoading,
+    initialize: initializeStore
+  } = useParticipants({
+    autoInitialize: USE_REALTIME_STORE
+  });
+
+  const {
+    allOrganizations,
+    isLoading: isOrgsLoading,
+  } = useOrganizations({
+    autoInitialize: USE_REALTIME_STORE
+  });
+
   const [selectedOrganization, setSelectedOrganization] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -77,19 +93,7 @@ export default function BibManagementPage() {
   const [duplicateParticipant, setDuplicateParticipant] = useState<Participant | null>(null);
   const [savingBib, setSavingBib] = useState(false);
 
-  // Real-time Store Integration
-  const {
-    allParticipants,
-    isLoading: isStoreLoading,
-    initialize: initializeStore
-  } = useParticipants({
-    autoInitialize: USE_REALTIME_STORE
-  });
 
-  // Load organizations on mount
-  useEffect(() => {
-    loadOrganizations();
-  }, []);
 
   // Sync real-time data to categoryData state
   useEffect(() => {
@@ -133,16 +137,7 @@ export default function BibManagementPage() {
     }
   }, [selectedOrganization]);
 
-  const loadOrganizations = async () => {
-    try {
-      const orgs = await getAllOrganizations();
-      setOrganizations(orgs);
-      // Count organization reads
-      setFirestoreReads(prev => prev + orgs.length);
-    } catch (error) {
-      toast.error('Failed to load organizations');
-    }
-  };
+
 
   const loadAllCategoryData = async () => {
     if (!selectedOrganization) return;
@@ -375,7 +370,7 @@ export default function BibManagementPage() {
         </div>
 
         <BibOrganizationSelector
-          organizations={organizations}
+          organizations={allOrganizations}
           selectedOrganization={selectedOrganization}
           onOrganizationChange={setSelectedOrganization}
           categoryCounts={getCategoryCounts()}

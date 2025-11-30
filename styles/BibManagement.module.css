@@ -70,6 +70,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .summaryCard {
@@ -334,29 +335,69 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .configGrid {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .selectionCard {
+    padding: 0.75rem;
+  }
+
+  .selectionGrid {
     grid-template-columns: 1fr;
   }
-  
+
+  /* Category cards full width on mobile */
+  .categorySummary {
+    flex-direction: column;
+  }
+
+  .summaryCard {
+    width: 100%;
+    padding: 1rem 1.25rem;
+  }
+
+  .configGrid {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+  }
+
   .tabs {
     flex-wrap: wrap;
+    overflow-x: auto;
   }
-  
+
   .tab {
     padding: 0.5rem 1rem;
     font-size: 0.8125rem;
+    white-space: nowrap;
   }
-  
+
+  .contentCard {
+    padding: 1rem;
+  }
+
   .table {
     font-size: 0.8125rem;
   }
-  
+
   .table th,
   .table td {
     padding: 0.5rem 0.75rem;
   }
-  
+
   .bibInput {
-    width: 120px;
+    width: 100%;
+    max-width: 200px;
+  }
+
+  .editActions {
+    flex-direction: column;
+  }
+
+  .editActions button {
+    width: 100%;
   }
 }

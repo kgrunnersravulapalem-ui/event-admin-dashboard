@@ -31,9 +31,9 @@ const GENDER_OPTIONS = [
  * Category options for race distance
  */
 const CATEGORY_OPTIONS = [
-  { value: '3K', label: '3K Run' },
-  { value: '5K', label: '5K Run' },
-  { value: '10K', label: '10K Run' },
+  { value: '3K', label: '3K' },
+  { value: '5K', label: '5K' },
+  { value: '10K', label: '10K' },
 ];
 
 /**

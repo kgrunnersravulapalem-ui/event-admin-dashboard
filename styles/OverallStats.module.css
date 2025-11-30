@@ -293,13 +293,89 @@
 }
 
 @media (max-width: 768px) {
+    .container {
+        padding: 0 0.5rem 2rem;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .summaryGrid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .summaryCard {
+        padding: 1.25rem;
+    }
+
+    .summaryValue {
+        font-size: 2.5rem;
+    }
+
+    .mainChartsGrid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .largeChartCard {
+        padding: 1rem;
+    }
+
+    .chartTitle {
+        font-size: 0.875rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .section {
+        margin-top: 2rem;
+    }
+
+    .sectionTitle {
+        font-size: 1.125rem;
+        margin-bottom: 1rem;
+    }
+
+    .orgChartsGrid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .orgChartCard {
+        padding: 1rem;
+    }
+
+    .orgChartTitle {
+        font-size: 1rem;
+    }
 
     .tableHeader,
     .tableRow {
         grid-template-columns: 2fr 1fr 1fr;
+        padding: 0.75rem 1rem;
     }
 
     .hideMobile {
         display: none;
+    }
+
+    .chartsGrid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .breakdownGrid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
 }

@@ -15,6 +15,7 @@ import { toast } from 'react-hot-toast';
 import styles from '@/styles/OverallStats.module.css';
 import { useParticipants } from '@/hooks/useParticipants';
 import { Participant, OrganizationStats } from '@/types';
+import { useOrganizations } from '@/hooks/useOrganizations';
 
 // Feature flag for safe migration
 const USE_REALTIME_STORE = true;
@@ -97,8 +98,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function OverallStatsPage() {
-    const [organizations, setOrganizations] = useState<Organization[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Real-time stores
+    const {
+        allParticipants,
+        isLoading: isParticipantsLoading,
+    } = useParticipants({
+        autoInitialize: USE_REALTIME_STORE
+    });
+
+    const {
+        allOrganizations,
+        isLoading: isOrgsLoading,
+    } = useOrganizations({
+        autoInitialize: USE_REALTIME_STORE
+    });
+
+    const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState<AggregatedStats>({
         totalParticipants: 0,
         swagKitTaken: 0,
@@ -118,21 +133,14 @@ export default function OverallStatsPage() {
         swag10K: 0,
     });
 
-    // Real-time Store Integration
-    const {
-        allParticipants,
-        isLoading: isStoreLoading,
-        initialize: initializeStore
-    } = useParticipants({
-        autoInitialize: USE_REALTIME_STORE
-    });
+    const [orgStats, setOrgStats] = useState<Map<string, OrganizationStats>>(new Map());
 
     // Calculate stats from real-time data
     useEffect(() => {
-        if (USE_REALTIME_STORE && allParticipants.length > 0 && organizations.length > 0) {
+        if (USE_REALTIME_STORE && allParticipants.length > 0 && allOrganizations.length > 0) {
             calculateRealtimeStats();
         }
-    }, [USE_REALTIME_STORE, allParticipants, organizations.length]);
+    }, [USE_REALTIME_STORE, allParticipants, allOrganizations]);
 
     const calculateRealtimeStats = () => {
         // 1. Aggregate Global Stats
@@ -157,7 +165,7 @@ export default function OverallStatsPage() {
 
         // Helper to init org stats
         const orgStatsMap = new Map<string, OrganizationStats>();
-        organizations.forEach(org => {
+        allOrganizations.forEach((org: Organization) => {
             orgStatsMap.set(org.name, {
                 totalParticipants: 0,
                 swagKitTaken: 0,
@@ -220,86 +228,13 @@ export default function OverallStatsPage() {
         });
 
         setStats(aggregated);
-
-        // Update organizations with real-time stats
-        setOrganizations(prev => prev.map(org => ({
-            ...org,
-            stats: orgStatsMap.get(org.name) || org.stats
-        })));
+        setOrgStats(orgStatsMap);
+        setLoading(false);
     };
 
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                setLoading(true);
-                const orgsData = await getAllOrganizations();
-                setOrganizations(orgsData);
-
-                // If using real-time store, we'll calculate stats in the other effect
-                if (USE_REALTIME_STORE) {
-                    setLoading(false);
-                    return;
-                }
-
-                // Aggregate stats (Legacy)
-                const aggregated: AggregatedStats = {
-                    totalParticipants: 0,
-                    swagKitTaken: 0,
-                    totalMale: 0,
-                    totalFemale: 0,
-                    total3K: 0,
-                    total5K: 0,
-                    total10K: 0,
-                    male3K: 0,
-                    male5K: 0,
-                    male10K: 0,
-                    female3K: 0,
-                    female5K: 0,
-                    female10K: 0,
-                    swag3K: 0,
-                    swag5K: 0,
-                    swag10K: 0,
-                };
-
-                orgsData.forEach(org => {
-                    if (org.stats) {
-                        aggregated.totalParticipants += org.stats.totalParticipants;
-                        aggregated.swagKitTaken += org.stats.swagKitTaken;
-
-                        // Gender
-                        aggregated.totalMale += (org.stats.male3K + org.stats.male5K + org.stats.male10K);
-                        aggregated.totalFemale += (org.stats.female3K + org.stats.female5K + org.stats.female10K);
-
-                        // Categories
-                        aggregated.total3K += org.stats.total3K;
-                        aggregated.total5K += org.stats.total5K;
-                        aggregated.total10K += org.stats.total10K;
-
-                        // Category-wise gender
-                        aggregated.male3K += org.stats.male3K;
-                        aggregated.male5K += org.stats.male5K;
-                        aggregated.male10K += org.stats.male10K;
-                        aggregated.female3K += org.stats.female3K;
-                        aggregated.female5K += org.stats.female5K;
-                        aggregated.female10K += org.stats.female10K;
-
-                        // Category-wise swag
-                        aggregated.swag3K += org.stats.swag3K;
-                        aggregated.swag5K += org.stats.swag5K;
-                        aggregated.swag10K += org.stats.swag10K;
-                    }
-                });
-
-                setStats(aggregated);
-            } catch (error) {
-                toast.error('Failed to load overall statistics');
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadData();
+        // Organizations are now from store
+        // We just calculate stats when data changes
     }, []);
 
     // Combined chart data - Category with Gender and Swag breakdown
@@ -411,25 +346,28 @@ export default function OverallStatsPage() {
                         <div className={styles.section}>
                             <h2 className={styles.sectionTitle}>Organization/School Specific Breakdown</h2>
                             <div className={styles.orgChartsGrid}>
-                                {organizations.filter(org => org.stats).map(org => {
+                                {allOrganizations.map(org => {
+                                    const orgStatsData = orgStats.get(org.name);
+                                    if (!orgStatsData || orgStatsData.totalParticipants === 0) return null;
+
                                     const orgCombinedData = [
                                         {
                                             category: '3K',
-                                            Male: org.stats!.male3K,
-                                            Female: org.stats!.female3K,
-                                            Swag: org.stats!.swag3K
+                                            Male: orgStatsData.male3K,
+                                            Female: orgStatsData.female3K,
+                                            Swag: orgStatsData.swag3K
                                         },
                                         {
                                             category: '5K',
-                                            Male: org.stats!.male5K,
-                                            Female: org.stats!.female5K,
-                                            Swag: org.stats!.swag5K
+                                            Male: orgStatsData.male5K,
+                                            Female: orgStatsData.female5K,
+                                            Swag: orgStatsData.swag5K
                                         },
                                         {
                                             category: '10K',
-                                            Male: org.stats!.male10K,
-                                            Female: org.stats!.female10K,
-                                            Swag: org.stats!.swag10K
+                                            Male: orgStatsData.male10K,
+                                            Female: orgStatsData.female10K,
+                                            Swag: orgStatsData.swag10K
                                         },
                                     ];
 
@@ -437,8 +375,8 @@ export default function OverallStatsPage() {
                                         <div key={org.id} className={styles.orgChartCard}>
                                             <h3 className={styles.orgChartTitle}>{kebabCase(org.name)}</h3>
                                             <div className={styles.orgStats}>
-                                                <span>Total: {org.stats!.totalParticipants}</span>
-                                                <span>Swag taken: {org.stats!.swagKitTaken}</span>
+                                                <span>Total: {orgStatsData.totalParticipants}</span>
+                                                <span>Swag taken: {orgStatsData.swagKitTaken}</span>
                                             </div>
                                             <ResponsiveContainer width="100%" height={400}>
                                                 <BarChart data={orgCombinedData}>

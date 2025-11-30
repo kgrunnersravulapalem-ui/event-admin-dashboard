@@ -18,6 +18,7 @@ import {
 } from '@/lib/organizationsService';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Organizations.module.css';
+import { useOrganizations } from '@/hooks/useOrganizations';
 
 /**
  * Format organization name to kebab-case with first letter capital
@@ -36,8 +37,15 @@ const formatOrgName = (name: string): string => {
  * Organizations page component
  */
 export default function OrganizationsPage() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use organizations store
+  const {
+    allOrganizations,
+    isLoading: isStoreLoading,
+  } = useOrganizations({
+    autoInitialize: true
+  });
+
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -47,11 +55,9 @@ export default function OrganizationsPage() {
   });
 
   /**
-   * Load organizations
+   * Organizations are now managed by the store
+   * No need to manually load
    */
-  useEffect(() => {
-    loadOrganizations();
-  }, []);
 
   /**
    * Close menu when clicking outside
@@ -67,21 +73,6 @@ export default function OrganizationsPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openMenuId]);
 
-  /**
-   * Fetch all organizations from Firestore
-   */
-  const loadOrganizations = async () => {
-    try {
-      setLoading(true);
-      const data = await getAllOrganizations();
-      setOrganizations(data);
-    } catch (error) {
-      toast.error('Failed to load organizations');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   /**
    * Handle form submission
@@ -99,26 +90,12 @@ export default function OrganizationsPage() {
         await updateOrganization(editingId, formData);
         toast.success('Organization updated successfully');
 
-        // Optimistically update local state instead of reloading
-        setOrganizations(prev => prev.map(org =>
-          org.id === editingId
-            ? { ...org, ...formData }
-            : org
-        ));
+        // Real-time store will update automatically
       } else {
         const newId = await addOrganization(formData);
         toast.success('Organization added successfully');
 
-        // Add new organization to local state
-        setOrganizations(prev => [...prev, {
-          id: newId,
-          ...formData,
-          totalParticipants: 0,
-          category3K: 0,
-          category5K: 0,
-          category10K: 0,
-
-        }]);
+        // Real-time store will update automatically
       }
 
       setFormData({ name: '', code: '' });
@@ -152,18 +129,11 @@ export default function OrganizationsPage() {
       return;
     }
 
-    // Store previous state for rollback
-    const previousOrganizations = [...organizations];
-
-    // Optimistically remove from UI
-    setOrganizations(prev => prev.filter(org => org.id !== id));
-
     try {
       await deleteOrganization(id);
       toast.success('Organization deleted successfully');
+      // Real-time store will update automatically
     } catch (error: unknown) {
-      // Rollback on error
-      setOrganizations(previousOrganizations);
       const message = error instanceof Error ? error.message : 'Failed to delete organization';
       toast.error(message);
     }
@@ -224,77 +194,77 @@ export default function OrganizationsPage() {
           </Card>
         )}
 
-        {loading ? (
+        {isStoreLoading ? (
           <div className={styles.loading}>Loading organizations...</div>
-        ) : organizations.length === 0 ? (
+        ) : allOrganizations.length === 0 ? (
           <Card className={styles.emptyState}>
             <p>No organizations found. Add your first organization to get started.</p>
           </Card>
         ) : (
-          <div className={styles.grid}>
-            <div className={styles.listHeader}>
-              <div>Name</div>
-              <div className={styles.statsHeader}>Total</div>
-              <div className={styles.statsHeader}>3K</div>
-              <div className={styles.statsHeader}>5K</div>
-              <div className={styles.statsHeader}>10K</div>
-
-              <div className={styles.statsHeader}>Actions</div>
-            </div>
-            {organizations.map((org) => (
-              <div key={org.id} className={styles.orgCard}>
-                <div className={styles.orgName}>{formatOrgName(org.name)}</div>
-                <div className={styles.statValue}>{org.totalParticipants || 0}</div>
-                <div className={styles.statValue}>{org.category3K || 0}</div>
-                <div className={styles.statValue}>{org.category5K || 0}</div>
-                <div className={styles.statValue}>{org.category10K || 0}</div>
-
-                <div className={styles.actionsCell}>
-                  <button
-                    className={styles.menuButton}
-                    onClick={() => setOpenMenuId(openMenuId === org.id ? null : org.id || null)}
-                    aria-label="Actions menu"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                      <circle cx="8" cy="3" r="1.5" />
-                      <circle cx="8" cy="8" r="1.5" />
-                      <circle cx="8" cy="13" r="1.5" />
-                    </svg>
-                  </button>
-                  {openMenuId === org.id && (
-                    <div className={styles.actionMenu}>
-                      <button
-                        className={styles.menuItem}
-                        onClick={() => {
-                          handleEdit(org);
-                          setOpenMenuId(null);
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                        Edit
-                      </button>
-                      <div className={styles.menuDivider} />
-                      <button
-                        className={`${styles.menuItem} ${styles.menuItemDanger}`}
-                        onClick={() => {
-                          org.id && handleDelete(org.id, org.name);
-                          setOpenMenuId(null);
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
+          <div className={styles.tableContainer}>
+            <div className={styles.grid}>
+              <div className={styles.listHeader}>
+                <div>Organization Name</div>
+                <div className={styles.statsHeader}>Total</div>
+                <div className={styles.statsHeader}>3K</div>
+                <div className={styles.statsHeader}>5K</div>
+                <div className={styles.statsHeader}>10K</div>
+                <div className={styles.statsHeader}>Actions</div>
               </div>
-            ))}
+              {allOrganizations.map((org) => (
+                <div key={org.id} className={styles.orgCard}>
+                  <div className={styles.orgName}>{formatOrgName(org.name)}</div>
+                  <div className={styles.statValue} data-label="Total">{org.totalParticipants || 0}</div>
+                  <div className={styles.statValue} data-label="3K">{org.category3K || 0}</div>
+                  <div className={styles.statValue} data-label="5K">{org.category5K || 0}</div>
+                  <div className={styles.statValue} data-label="10K">{org.category10K || 0}</div>
+
+                  <div className={styles.actionsCell}>
+                    <button
+                      className={styles.menuButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (org.id) {
+                          setOpenMenuId(openMenuId === org.id ? null : org.id);
+                        }
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <circle cx="8" cy="3" r="1.5" />
+                        <circle cx="8" cy="8" r="1.5" />
+                        <circle cx="8" cy="13" r="1.5" />
+                      </svg>
+                    </button>
+
+                    {org.id && openMenuId === org.id && (
+                      <div className={styles.actionMenu}>
+                        <button
+                          className={styles.menuItem}
+                          onClick={() => handleEdit(org)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                          Edit
+                        </button>
+                        <div className={styles.menuDivider} />
+                        <button
+                          className={`${styles.menuItem} ${styles.menuItemDanger}`}
+                          onClick={() => org.id && handleDelete(org.id, org.name)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
