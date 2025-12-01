@@ -11,7 +11,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button, Card, Input } from '@/components/ui';
 import { Organization } from '@/types';
 import {
-  getAllOrganizations,
+
   addOrganization,
   updateOrganization,
   deleteOrganization

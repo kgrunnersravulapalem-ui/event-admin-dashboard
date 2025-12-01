@@ -34,6 +34,7 @@ import EditParticipantModal from '@/components/participants/EditParticipantModal
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Participants.module.css';
 import { useParticipants } from '@/hooks/useParticipants';
+import { useOrganizations } from '@/hooks/useOrganizations';
 
 // Feature flag for safe migration
 const USE_REALTIME_STORE = true;
@@ -130,6 +131,13 @@ export default function ParticipantsPage() {
     autoInitialize: USE_REALTIME_STORE,
   });
 
+  const {
+    allOrganizations,
+    isLoading: isOrgsLoading,
+  } = useOrganizations({
+    autoInitialize: USE_REALTIME_STORE
+  });
+
   // Sync real-time store data to local state when enabled
   useEffect(() => {
     if (USE_REALTIME_STORE) {
@@ -137,15 +145,15 @@ export default function ParticipantsPage() {
       setTotalCount(realtimeStore.totalCount);
       setLoading(realtimeStore.isLoading);
       setHasMore(realtimeStore.hasNextPage);
-      // Note: We don't sync organizations here as they are loaded separately
-      // and the store might re-fetch them unnecessarily for the dropdown
+      setOrganizations(allOrganizations);
     }
   }, [
     USE_REALTIME_STORE,
     realtimeStore.participants,
     realtimeStore.totalCount,
     realtimeStore.isLoading,
-    realtimeStore.hasNextPage
+    realtimeStore.hasNextPage,
+    allOrganizations
   ]);
 
 
@@ -182,24 +190,27 @@ export default function ParticipantsPage() {
 
   /**
    * Load organizations on mount (only once)
+   * DEPRECATED: Using useOrganizations store
    */
   useEffect(() => {
     // Guard to prevent double loading (especially in React strict mode)
     if (organizationsLoadedRef.current) return;
     organizationsLoadedRef.current = true;
 
-    const loadOrganizations = async () => {
-      try {
-        const orgsData = await getAllOrganizations();
-        setOrganizations(orgsData);
-        // Count organization reads
-        setFirestoreReads(prev => prev + orgsData.length);
-      } catch (error) {
-        toast.error('Failed to load organizations');
-        console.error(error);
-      }
-    };
-    loadOrganizations();
+    if (!USE_REALTIME_STORE) {
+      const loadOrganizations = async () => {
+        try {
+          const orgsData = await getAllOrganizations();
+          setOrganizations(orgsData);
+          // Count organization reads
+          setFirestoreReads(prev => prev + orgsData.length);
+        } catch (error) {
+          toast.error('Failed to load organizations');
+          console.error(error);
+        }
+      };
+      loadOrganizations();
+    }
   }, []);
 
   /**

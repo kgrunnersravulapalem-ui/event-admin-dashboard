@@ -4,24 +4,26 @@
  * Page for enrolling new participants
  */
 
+'use client';
+
 import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import EnrollmentForm from '@/components/forms/EnrollmentForm';
 import { Card } from '@/components/ui';
-import { getAllOrganizations } from '@/lib/organizationsService';
 import styles from '@/styles/Enroll.module.css';
+import { useOrganizations } from '@/hooks/useOrganizations';
 
 /**
  * Enrollment page component
  */
-/**
- * Enrollment page component
- */
-export default async function EnrollPage() {
-  const organizations = await getAllOrganizations();
+export default function EnrollPage() {
+  // Use real-time store for organizations
+  const { allOrganizations } = useOrganizations({
+    autoInitialize: true
+  });
 
-  // Pass only necessary data to avoid serialization issues with Dates
-  const simplifiedOrgs = organizations.map(org => ({ name: org.name }));
+  // Pass simplified orgs to form
+  const simplifiedOrgs = allOrganizations.map(org => ({ name: org.name }));
 
   return (
     <DashboardLayout>

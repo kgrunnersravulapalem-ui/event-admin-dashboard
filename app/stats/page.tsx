@@ -9,7 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Organization } from '@/types';
-import { getAllOrganizations } from '@/lib/organizationsService';
+
 import { kebabCase } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/OverallStats.module.css';

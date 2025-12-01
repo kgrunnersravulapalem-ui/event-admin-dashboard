@@ -19,7 +19,7 @@ import {
   updateBibNumber,
   checkBibNumberDuplicate,
 } from '@/lib/participantsService';
-import { getAllOrganizations } from '@/lib/organizationsService';
+
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/BibManagement.module.css';
 import { useParticipants } from '@/hooks/useParticipants';
