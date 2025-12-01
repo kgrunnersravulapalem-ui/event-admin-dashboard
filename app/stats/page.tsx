@@ -58,6 +58,9 @@ interface AggregatedStats {
     swag3K: number;
     swag5K: number;
     swag10K: number;
+
+    // T-Shirt Sizes
+    sizeCounts: Record<string, number>;
 }
 
 const COLORS = {
@@ -65,6 +68,7 @@ const COLORS = {
     female: '#ec4899',
     swag: '#f43f5e',
     total: '#10b981',
+    tshirt: '#8b5cf6',
 };
 
 // Custom tooltip to show sum of male and female
@@ -131,6 +135,7 @@ export default function OverallStatsPage() {
         swag3K: 0,
         swag5K: 0,
         swag10K: 0,
+        sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
     });
 
     const [orgStats, setOrgStats] = useState<Map<string, OrganizationStats>>(new Map());
@@ -161,6 +166,7 @@ export default function OverallStatsPage() {
             swag3K: 0,
             swag5K: 0,
             swag10K: 0,
+            sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
         };
 
         // Helper to init org stats
@@ -198,6 +204,11 @@ export default function OverallStatsPage() {
                 if (p.gender === 'Male') aggregated.male10K++;
                 else if (p.gender === 'Female') aggregated.female10K++;
                 if (p.swagKitGiven) aggregated.swag10K++;
+            }
+
+            // T-Shirt Size Aggregation
+            if (p.size && aggregated.sizeCounts[p.size] !== undefined) {
+                aggregated.sizeCounts[p.size]++;
             }
 
             // Organization Aggregation
@@ -267,6 +278,12 @@ export default function OverallStatsPage() {
         { name: 'Male', value: stats.totalMale },
         { name: 'Female', value: stats.totalFemale },
     ];
+
+    // T-Shirt Size Chart Data
+    const tShirtData = Object.entries(stats.sizeCounts).map(([size, count]) => ({
+        size,
+        count
+    }));
 
     return (
         <DashboardLayout>
@@ -340,6 +357,21 @@ export default function OverallStatsPage() {
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
+                        </div>
+
+                        {/* T-Shirt Size Distribution - Full Width */}
+                        <div className={styles.largeChartCard} style={{ marginTop: '24px' }}>
+                            <h2 className={styles.chartTitle}>T-Shirt Size Distribution</h2>
+                            <ResponsiveContainer width="100%" height={350}>
+                                <BarChart data={tShirtData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="size" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="count" name="Count" fill={COLORS.tshirt} />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
 
                         {/* Organization-Specific Breakdown */}

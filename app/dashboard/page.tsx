@@ -199,7 +199,7 @@ export default function DashboardPage() {
               </div>
             </Card>
           </Link>
-          <Link href="/overall-stats" className={styles.linkCard}>
+          <Link href="/stats" className={styles.linkCard}>
             <Card>
               <div className={styles.linkContent}>
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
