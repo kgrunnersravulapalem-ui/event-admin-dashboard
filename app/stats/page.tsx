@@ -178,6 +178,7 @@ export default function OverallStatsPage() {
                 total3K: 0, male3K: 0, female3K: 0, swag3K: 0,
                 total5K: 0, male5K: 0, female5K: 0, swag5K: 0,
                 total10K: 0, male10K: 0, female10K: 0, swag10K: 0,
+                sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 },
             });
         });
 
@@ -233,6 +234,11 @@ export default function OverallStatsPage() {
                         if (p.gender === 'Male') stats.male10K++;
                         else if (p.gender === 'Female') stats.female10K++;
                         if (p.swagKitGiven) stats.swag10K++;
+                    }
+
+                    // Organization T-Shirt Aggregation
+                    if (p.size && stats.sizeCounts[p.size] !== undefined) {
+                        stats.sizeCounts[p.size]++;
                     }
                 }
             }
@@ -410,18 +416,36 @@ export default function OverallStatsPage() {
                                                 <span>Total: {orgStatsData.totalParticipants}</span>
                                                 <span>Swag taken: {orgStatsData.swagKitTaken}</span>
                                             </div>
-                                            <ResponsiveContainer width="100%" height={400}>
-                                                <BarChart data={orgCombinedData}>
-                                                    <CartesianGrid strokeDasharray="3 3" />
-                                                    <XAxis dataKey="category" />
-                                                    <YAxis />
-                                                    <Tooltip content={<CustomTooltip />} />
-                                                    <Legend />
-                                                    <Bar dataKey="Male" fill={COLORS.male} />
-                                                    <Bar dataKey="Female" fill={COLORS.female} />
-                                                    <Bar dataKey="Swag" fill={COLORS.swag} />
-                                                </BarChart>
-                                            </ResponsiveContainer>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                                <div style={{ height: '400px' }}>
+                                                    <h4 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '14px', color: '#64748b' }}>Category & Gender</h4>
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <BarChart data={orgCombinedData}>
+                                                            <CartesianGrid strokeDasharray="3 3" />
+                                                            <XAxis dataKey="category" />
+                                                            <YAxis />
+                                                            <Tooltip content={<CustomTooltip />} />
+                                                            <Legend />
+                                                            <Bar dataKey="Male" fill={COLORS.male} />
+                                                            <Bar dataKey="Female" fill={COLORS.female} />
+                                                            <Bar dataKey="Swag" fill={COLORS.swag} />
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                                <div style={{ height: '400px', width: '100%' }}>
+                                                    <h4 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '14px', color: '#64748b' }}>T-Shirt Sizes</h4>
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <BarChart data={Object.entries(orgStatsData.sizeCounts).map(([size, count]) => ({ size, count }))}>
+                                                            <CartesianGrid strokeDasharray="3 3" />
+                                                            <XAxis dataKey="size" />
+                                                            <YAxis />
+                                                            <Tooltip />
+                                                            <Legend />
+                                                            <Bar dataKey="count" name="Count" fill={COLORS.tshirt} />
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
                                         </div>
                                     );
                                 })}

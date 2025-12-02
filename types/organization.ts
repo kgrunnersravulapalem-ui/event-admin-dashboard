@@ -22,6 +22,9 @@ export interface OrganizationStats {
   male10K: number;
   female10K: number;
   swag10K: number;
+
+  // T-Shirt Stats
+  sizeCounts: Record<string, number>;
 }
 
 export interface Organization {
