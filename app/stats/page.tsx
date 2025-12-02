@@ -135,7 +135,7 @@ export default function OverallStatsPage() {
         swag3K: 0,
         swag5K: 0,
         swag10K: 0,
-        sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
+        sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 },
     });
 
     const [orgStats, setOrgStats] = useState<Map<string, OrganizationStats>>(new Map());
@@ -166,7 +166,7 @@ export default function OverallStatsPage() {
             swag3K: 0,
             swag5K: 0,
             swag10K: 0,
-            sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
+            sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 },
         };
 
         // Helper to init org stats

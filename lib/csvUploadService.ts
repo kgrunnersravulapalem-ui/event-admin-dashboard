@@ -73,27 +73,37 @@ const normalizeHeader = (header: string): string => {
 /**
  * Validate CSV headers match expected format
  */
-export const validateHeaders = (headers: string[]): { valid: boolean; message: string } => {
+/**
+ * Validate CSV headers and return mapping
+ */
+export const validateHeaders = (headers: string[]): { valid: boolean; message: string; mapping?: Record<string, number> } => {
   const normalizedHeaders = headers.map(normalizeHeader);
   const expectedNormalized = EXPECTED_HEADERS.map(h => normalizeHeader(h));
+  const mapping: Record<string, number> = {};
 
-  if (normalizedHeaders.length !== expectedNormalized.length) {
+  // Check if all required headers are present
+  const missingHeaders = expectedNormalized.filter(expected => !normalizedHeaders.includes(expected));
+
+  if (missingHeaders.length > 0) {
+    // Map back to original header names for better error message
+    const missingOriginals = missingHeaders.map(h => {
+      const index = expectedNormalized.indexOf(h);
+      return EXPECTED_HEADERS[index];
+    });
+
     return {
       valid: false,
-      message: `Expected ${expectedNormalized.length} columns, found ${normalizedHeaders.length}. Required: ${EXPECTED_HEADERS.join(', ')}`,
+      message: `Missing required columns: ${missingOriginals.join(', ')}`,
     };
   }
 
-  for (let i = 0; i < expectedNormalized.length; i++) {
-    if (normalizedHeaders[i] !== expectedNormalized[i]) {
-      return {
-        valid: false,
-        message: `Column ${i + 1} should be "${EXPECTED_HEADERS[i]}", found "${headers[i]}"`,
-      };
-    }
-  }
+  // Create mapping
+  expectedNormalized.forEach((expected, index) => {
+    const foundIndex = normalizedHeaders.indexOf(expected);
+    mapping[EXPECTED_HEADERS[index]] = foundIndex;
+  });
 
-  return { valid: true, message: 'Headers are valid' };
+  return { valid: true, message: 'Headers are valid', mapping };
 };
 
 /**
@@ -117,7 +127,6 @@ const parseCSVLine = (line: string): string[] => {
     }
   }
   result.push(current.trim());
-
   return result;
 };
 
@@ -181,9 +190,11 @@ export const parseCSVContent = (content: string): CSVParseResult => {
   const headers = parseCSVLine(lines[0]);
   const headerValidation = validateHeaders(headers);
 
-  if (!headerValidation.valid) {
+  if (!headerValidation.valid || !headerValidation.mapping) {
     return { success: false, data: [], errors: [headerValidation.message], warnings: [] };
   }
+
+  const mapping = headerValidation.mapping;
 
   // Parse data rows
   for (let i = 1; i < lines.length; i++) {
@@ -193,15 +204,21 @@ export const parseCSVContent = (content: string): CSVParseResult => {
     const rowNumber = i + 1;
     const values = parseCSVLine(line);
 
-    if (values.length !== EXPECTED_HEADERS.length) {
-      warnings.push(`Row ${rowNumber}: Expected ${EXPECTED_HEADERS.length} columns, found ${values.length}. Will use defaults for missing columns.`);
+    // Check if we have enough columns based on the max index in mapping
+    const maxIndex = Math.max(...Object.values(mapping));
+    if (values.length <= maxIndex) {
       // Pad with empty strings if needed
-      while (values.length < EXPECTED_HEADERS.length) {
+      while (values.length <= maxIndex) {
         values.push('');
       }
     }
 
-    const [name, gender, mobileNumber, category, size] = values;
+    // Extract values using mapping
+    const name = values[mapping['Name']] || '';
+    const gender = values[mapping['Gender']] || '';
+    const mobileNumber = values[mapping['MobileNumber']] || '';
+    const category = values[mapping['Category']] || '';
+    const size = values[mapping['Size']] || '';
 
     // Skip completely empty rows
     if (!name && !gender && !mobileNumber && !category && !size) {
