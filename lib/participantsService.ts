@@ -722,6 +722,10 @@ export const checkBibNumberDuplicate = async (
   excludeParticipantId?: string
 ): Promise<Participant | null> => {
   try {
+    if (!bibNumber || bibNumber.trim() === '') {
+      return null;
+    }
+
     const participantsRef = getParticipantsCollection();
     const q = query(participantsRef, where('bibNumber', '==', bibNumber));
     const querySnapshot = await getDocs(q);

@@ -162,6 +162,11 @@ const normalizeCategory = (value: string): '3K' | '5K' | '10K' | null => {
   if (normalized === '5K') return '5K';
   if (normalized === '10K') return '10K';
 
+  // Handle values with KM suffix
+  if (normalized === '3KM') return '3K';
+  if (normalized === '5KM') return '5K';
+  if (normalized === '10KM') return '10K';
+
   return null;
 };
 

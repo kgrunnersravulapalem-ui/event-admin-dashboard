@@ -370,7 +370,7 @@ export default function ParticipantsPage() {
     try {
       await updateParticipant(editingParticipant.id, {
         ...editFormData,
-        bibNumber: bibNumber || undefined,
+        bibNumber: bibNumber,
       });
       toast.success('Participant updated successfully');
 
@@ -380,7 +380,7 @@ export default function ParticipantsPage() {
           ? {
             ...p,
             ...editFormData,
-            bibNumber: bibNumber || undefined,
+            bibNumber: bibNumber,
             updatedAt: new Date()
           }
           : p
