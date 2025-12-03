@@ -60,6 +60,84 @@
   outline-offset: 2px;
 }
 
+/* Mode Toggle */
+.modeToggle {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--theme-bg-secondary);
+  padding: 0.25rem;
+  border-radius: var(--border-radius-md);
+}
+
+.modeButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--theme-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.modeButton:hover {
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-primary);
+}
+
+.modeButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.modeButtonActive {
+  background: var(--theme-bg-primary);
+  color: var(--theme-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.modeButtonActive:hover {
+  background: var(--theme-bg-primary);
+  color: var(--theme-primary);
+}
+
+/* Paste Area */
+.pasteArea {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-family: var(--font-geist-mono), monospace;
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-secondary);
+  border: 2px solid var(--theme-border);
+  border-radius: var(--border-radius-md);
+  resize: vertical;
+  transition: all 0.15s;
+}
+
+.pasteArea:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  background: var(--theme-bg-primary);
+}
+
+.pasteArea::placeholder {
+  color: var(--theme-text-muted);
+}
+
+.pasteHint {
+  font-size: 0.75rem;
+  color: var(--theme-text-muted);
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
+}
+
 /* Info Box */
 .infoBox {
   background: var(--theme-bg-tertiary);

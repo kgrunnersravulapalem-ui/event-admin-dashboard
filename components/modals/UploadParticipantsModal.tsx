@@ -30,6 +30,7 @@ interface UploadParticipantsModalProps {
 }
 
 type UploadStep = 'select' | 'preview' | 'uploading' | 'complete';
+type InputMode = 'file' | 'paste';
 
 /**
  * Upload Participants Modal
@@ -43,6 +44,8 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
 }) => {
   const [selectedOrganization, setSelectedOrganization] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [pastedContent, setPastedContent] = useState('');
+  const [inputMode, setInputMode] = useState<InputMode>('file');
   const [step, setStep] = useState<UploadStep>('select');
   const [parseResult, setParseResult] = useState<CSVParseResult | null>(null);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
@@ -55,6 +58,8 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
   const resetModal = () => {
     setSelectedOrganization('');
     setFile(null);
+    setPastedContent('');
+    setInputMode('file');
     setStep('select');
     setParseResult(null);
     setUploadProgress({ current: 0, total: 0 });
@@ -102,6 +107,35 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
       }
     } catch (error) {
       toast.error('Failed to read file');
+      console.error(error);
+    }
+  };
+
+  /**
+   * Handle pasted content
+   */
+  const handlePasteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const content = e.target.value;
+    setPastedContent(content);
+
+    if (!content.trim()) {
+      setParseResult(null);
+      return;
+    }
+
+    try {
+      const result = parseCSVContent(content);
+      console.log('Paste Parse Result:', result); // Debug
+      setParseResult(result);
+
+      // Show toast for immediate feedback
+      if (result.errors.length > 0 && result.data.length === 0) {
+        toast.error('Pasted data has validation errors. Check the details below.');
+      } else if (result.data.length > 0) {
+        toast.success(`Found ${result.data.length} valid rows`);
+      }
+    } catch (error) {
+      toast.error('Failed to parse pasted content');
       console.error(error);
     }
   };
@@ -163,22 +197,82 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
         />
       </div>
 
+      {/* Input Mode Toggle */}
       <div className={styles.field}>
-        <label className={styles.label}>CSV File *</label>
-        <div className={styles.fileInputWrapper}>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            className={styles.fileInput}
-            id="csv-upload"
-          />
-          <label htmlFor="csv-upload" className={styles.fileInputLabel}>
-            {file ? file.name : 'Choose CSV file...'}
-          </label>
+        <label className={styles.label}>Input Method</label>
+        <div className={styles.modeToggle}>
+          <button
+            type="button"
+            className={`${styles.modeButton} ${inputMode === 'file' ? styles.modeButtonActive : ''}`}
+            onClick={() => {
+              setInputMode('file');
+              setPastedContent('');
+              setParseResult(null);
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+              <polyline points="13 2 13 9 20 9" />
+            </svg>
+            Upload File
+          </button>
+          <button
+            type="button"
+            className={`${styles.modeButton} ${inputMode === 'paste' ? styles.modeButtonActive : ''}`}
+            onClick={() => {
+              setInputMode('paste');
+              setFile(null);
+              setParseResult(null);
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+            </svg>
+            Paste Data
+          </button>
         </div>
       </div>
+
+      {/* File Upload Mode */}
+      {inputMode === 'file' && (
+        <div className={styles.field}>
+          <label className={styles.label}>CSV File *</label>
+          <div className={styles.fileInputWrapper}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className={styles.fileInput}
+              id="csv-upload"
+            />
+            <label htmlFor="csv-upload" className={styles.fileInputLabel}>
+              {file ? file.name : 'Choose CSV file...'}
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Paste Mode */}
+      {inputMode === 'paste' && (
+        <div className={styles.field}>
+          <label className={styles.label}>Paste CSV Data *</label>
+          <textarea
+            className={styles.pasteArea}
+            placeholder="Paste your CSV data here (including headers)&#10;Example:&#10;Name,Gender,MobileNumber,Category,Size&#10;John Doe,Male,9876543210,5K,L"
+            value={pastedContent}
+            onChange={handlePasteChange}
+            rows={10}
+          />
+          <p className={styles.pasteHint}>
+            💡 Tip: Copy data directly from Google Sheets or Excel (including headers)
+          </p>
+        </div>
+      )}
 
       {/* Show parsing errors if file was selected but has issues */}
       {parseResult && parseResult.errors.length > 0 && parseResult.data.length === 0 && (
@@ -375,7 +469,13 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
             </Button>
             <Button
               onClick={() => parseResult && parseResult.data.length > 0 && setStep('preview')}
-              disabled={!file || !selectedOrganization || !parseResult || parseResult.data.length === 0}
+              disabled={
+                !selectedOrganization ||
+                !parseResult ||
+                parseResult.data.length === 0 ||
+                (inputMode === 'file' && !file) ||
+                (inputMode === 'paste' && !pastedContent.trim())
+              }
             >
               Continue
             </Button>

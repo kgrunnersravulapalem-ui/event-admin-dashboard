@@ -107,9 +107,32 @@ export const validateHeaders = (headers: string[]): { valid: boolean; message: s
 };
 
 /**
- * Parse a single CSV line handling quoted values
+ * Detect delimiter (comma or tab) from the first line
  */
-const parseCSVLine = (line: string): string[] => {
+const detectDelimiter = (line: string): string => {
+  // Count tabs and commas
+  const tabCount = (line.match(/\t/g) || []).length;
+  const commaCount = (line.match(/,/g) || []).length;
+
+  // If we have tabs, it's likely TSV (from Google Sheets)
+  if (tabCount > 0) {
+    return '\t';
+  }
+
+  // Otherwise default to comma
+  return ',';
+};
+
+/**
+ * Parse a single CSV/TSV line handling quoted values
+ */
+const parseCSVLine = (line: string, delimiter: string = ','): string[] => {
+  // For tab-separated, just split by tabs (Google Sheets doesn't use quotes)
+  if (delimiter === '\t') {
+    return line.split('\t').map(val => val.trim());
+  }
+
+  // For comma-separated, handle quoted values
   const result: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -119,7 +142,7 @@ const parseCSVLine = (line: string): string[] => {
 
     if (char === '"') {
       inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === delimiter && !inQuotes) {
       result.push(current.trim());
       current = '';
     } else {
@@ -191,8 +214,12 @@ export const parseCSVContent = (content: string): CSVParseResult => {
     return { success: false, data: [], errors: ['CSV file is empty'], warnings: [] };
   }
 
+  // Detect delimiter from first line
+  const delimiter = detectDelimiter(lines[0]);
+  console.log('Detected delimiter:', delimiter === '\t' ? 'TAB' : 'COMMA');
+
   // Parse headers
-  const headers = parseCSVLine(lines[0]);
+  const headers = parseCSVLine(lines[0], delimiter);
   const headerValidation = validateHeaders(headers);
 
   if (!headerValidation.valid || !headerValidation.mapping) {
@@ -207,7 +234,7 @@ export const parseCSVContent = (content: string): CSVParseResult => {
     if (!line) continue;
 
     const rowNumber = i + 1;
-    const values = parseCSVLine(line);
+    const values = parseCSVLine(line, delimiter);
 
     // Check if we have enough columns based on the max index in mapping
     const maxIndex = Math.max(...Object.values(mapping));
