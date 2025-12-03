@@ -85,6 +85,16 @@ export const updateParticipant = async (
   try {
     const participantDoc = doc(db, COLLECTION_NAME, id);
 
+    // Get the current participant data to check if category changed
+    const currentSnapshot = await getDoc(participantDoc);
+    if (!currentSnapshot.exists()) {
+      throw new Error('Participant not found');
+    }
+
+    const currentData = currentSnapshot.data();
+    const oldCategory = currentData.category as '3K' | '5K' | '10K';
+    const oldOrganization = currentData.organization as string;
+
     // Filter out undefined values - Firestore doesn't accept undefined
     const cleanData: Record<string, any> = {};
     Object.entries(data).forEach(([key, value]) => {
@@ -97,6 +107,17 @@ export const updateParticipant = async (
       ...cleanData,
       updatedAt: serverTimestamp(),
     });
+
+    // Update organization stats if category changed
+    if (data.category && data.category !== oldCategory) {
+      const organization = data.organization || oldOrganization;
+
+      // Decrement old category count
+      await decrementOrgParticipantStats(organization, oldCategory);
+
+      // Increment new category count
+      await incrementOrgParticipantStats(organization, data.category as '3K' | '5K' | '10K');
+    }
   } catch (error) {
     console.error('Error updating participant:', error);
     throw new Error('Failed to update participant. Please try again.');

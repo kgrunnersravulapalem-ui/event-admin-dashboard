@@ -344,4 +344,68 @@ export const updateOrganizationStats = async (
   }
 };
 
+/**
+ * Recalculate organization stats from actual participant counts
+ * This is useful for fixing stats that may have gotten out of sync
+ */
+export const recalculateOrganizationStats = async (
+  organizationName: string
+): Promise<void> => {
+  try {
+    const org = await getOrganizationByName(organizationName);
+    if (!org?.id) {
+      console.warn(`Organization not found: ${organizationName}`);
+      return;
+    }
+
+    // Query all participants for this organization
+    const participantsRef = collection(db, 'participants');
+    const q = query(participantsRef, where('organization', '==', organizationName));
+    const querySnapshot = await getDocs(q);
+
+    // Count participants by category
+    let total = 0;
+    let count3K = 0;
+    let count5K = 0;
+    let count10K = 0;
+
+    querySnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      total++;
+
+      switch (data.category) {
+        case '3K':
+          count3K++;
+          break;
+        case '5K':
+          count5K++;
+          break;
+        case '10K':
+          count10K++;
+          break;
+      }
+    });
+
+    // Update organization with recalculated stats
+    const orgDoc = doc(db, COLLECTION_NAME, org.id);
+    await updateDoc(orgDoc, {
+      totalParticipants: total,
+      category3K: count3K,
+      category5K: count5K,
+      category10K: count10K,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`Recalculated stats for ${organizationName}:`, {
+      total,
+      '3K': count3K,
+      '5K': count5K,
+      '10K': count10K,
+    });
+  } catch (error) {
+    console.error('Error recalculating organization stats:', error);
+    throw new Error('Failed to recalculate organization stats.');
+  }
+};
+
 

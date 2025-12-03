@@ -14,7 +14,8 @@ import {
 
   addOrganization,
   updateOrganization,
-  deleteOrganization
+  deleteOrganization,
+  recalculateOrganizationStats
 } from '@/lib/organizationsService';
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Organizations.module.css';
@@ -148,6 +149,24 @@ export default function OrganizationsPage() {
     setEditingId(null);
   };
 
+  /**
+   * Handle recalculate stats button click
+   */
+  const handleRecalculateStats = async (name: string) => {
+    try {
+      setLoading(true);
+      await recalculateOrganizationStats(name);
+      toast.success(`Stats recalculated for ${name}`);
+      setOpenMenuId(null);
+      // Real-time store will update automatically
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to recalculate stats';
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className={styles.container}>
@@ -247,6 +266,18 @@ export default function OrganizationsPage() {
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                           </svg>
                           Edit
+                        </button>
+                        <button
+                          className={styles.menuItem}
+                          onClick={() => handleRecalculateStats(org.name)}
+                          disabled={loading}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="23 4 23 10 17 10" />
+                            <polyline points="1 20 1 14 7 14" />
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                          </svg>
+                          Recalculate Stats
                         </button>
                         <div className={styles.menuDivider} />
                         <button
