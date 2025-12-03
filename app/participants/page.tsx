@@ -458,6 +458,13 @@ export default function ParticipantsPage() {
   };
 
   /**
+   * Handle clear selection
+   */
+  const handleClearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  /**
    * Handle bulk delete
    */
   const handleBulkDelete = async () => {
@@ -732,6 +739,7 @@ export default function ParticipantsPage() {
               onToggleSwagKit={handleToggleSwagKit}
               onBulkDelete={handleBulkDelete}
               onBulkToggleStatus={handleBulkToggleStatus}
+              onClearSelection={handleClearSelection}
               isBulkDeleting={isBulkDeleting}
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}

@@ -14,6 +14,7 @@ interface ParticipantsTableProps {
     onToggleSwagKit: (participant: Participant) => void;
     onBulkDelete: () => void;
     onBulkToggleStatus: (disable: boolean) => void;
+    onClearSelection: () => void;
     isBulkDeleting: boolean;
     currentPage: number;
     itemsPerPage: number;
@@ -30,6 +31,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
     onToggleSwagKit,
     onBulkDelete,
     onBulkToggleStatus,
+    onClearSelection,
     isBulkDeleting,
     currentPage,
     itemsPerPage,
@@ -84,7 +86,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                     <Button
                         variant="secondary"
                         size="small"
-                        onClick={onSelectAll} // Re-using select all to toggle off if all selected, but better to have clear selection
+                        onClick={onClearSelection}
                     >
                         Clear Selection
                     </Button>
