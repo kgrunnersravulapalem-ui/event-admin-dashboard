@@ -40,13 +40,38 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
         <>
             {/* Search Bar */}
             <div className={styles.searchBar}>
-                <input
-                    type="text"
-                    placeholder="Search by name, mobile, or bib number..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={styles.searchInput}
-                />
+                <div className={styles.searchWrapper}>
+                    <input
+                        type="text"
+                        placeholder="Search by name, mobile, or bib number..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={styles.searchInput}
+                    />
+                    {searchTerm && (
+                        <button
+                            className={styles.clearButton}
+                            onClick={() => setSearchTerm('')}
+                            aria-label="Clear search"
+                            type="button"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Filters */}
@@ -125,7 +150,7 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                         />
                     </div>
 
-                    <div className={styles.filterItem}>
+                    <div className={`${styles.filterItem} ${styles.dateFilter}`}>
                         <label className={styles.filterLabel}>From Date</label>
                         <input
                             type="date"
@@ -138,7 +163,7 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                         />
                     </div>
 
-                    <div className={styles.filterItem}>
+                    <div className={`${styles.filterItem} ${styles.dateFilter}`}>
                         <label className={styles.filterLabel}>To Date</label>
                         <input
                             type="date"
