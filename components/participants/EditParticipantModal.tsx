@@ -133,6 +133,24 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                         </div>
                     )}
                 </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                    <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>
+                        Swag Kit Given
+                    </label>
+                    <div className={styles.swagKitCell} style={{ justifyContent: 'flex-start' }}>
+                        <label className={styles.toggleSwitch}>
+                            <input
+                                type="checkbox"
+                                name="swagKitGiven"
+                                checked={editFormData.swagKitGiven || false}
+                                onChange={onInputChange}
+                                className={styles.toggleInput}
+                            />
+                            <span className={styles.toggleSlider}></span>
+                        </label>
+                    </div>
+                </div>
             </div>
         </Modal>
     );

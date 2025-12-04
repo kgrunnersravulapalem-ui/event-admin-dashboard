@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui';
 import Link from 'next/link';
@@ -17,23 +17,13 @@ import { useOrganizations } from '@/hooks/useOrganizations';
 // Feature flag for safe migration
 const USE_REALTIME_STORE = true;
 
-/**
- * Dashboard statistics calculated from organizations
- */
-interface DashboardStats {
-  totalParticipants: number;
-  totalOrganizations: number;
-  category3K: number;
-  category5K: number;
-  category10K: number;
-}
+
 
 /**
  * Dashboard page component
  */
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+
 
   // Real-time Store Integration
   const {
@@ -51,31 +41,21 @@ export default function DashboardPage() {
     autoInitialize: USE_REALTIME_STORE
   });
 
-  useEffect(() => {
-    // Stats are now calculated from real-time stores
-    // in the updateStatsFromRealtimeData effect
-  }, []);
+  const loading = isStoreLoading || isOrgsLoading;
 
-  // Recalculate stats when real-time data changes
-  useEffect(() => {
-    if (USE_REALTIME_STORE && (allParticipants.length > 0 || allOrganizations.length > 0)) {
-      updateStatsFromRealtimeData();
+  const stats = useMemo(() => {
+    if (!USE_REALTIME_STORE || (allParticipants.length === 0 && allOrganizations.length === 0)) {
+      return null;
     }
-  }, [USE_REALTIME_STORE, allParticipants, allOrganizations]);
 
-  const updateStatsFromRealtimeData = () => {
-    // Calculate stats from real-time stores
-    const calculatedStats: DashboardStats = {
+    return {
       totalOrganizations: allOrganizations.length,
       totalParticipants: allParticipants.length,
       category3K: allParticipants.filter(p => p.category === '3K').length,
       category5K: allParticipants.filter(p => p.category === '5K').length,
       category10K: allParticipants.filter(p => p.category === '10K').length,
     };
-
-    setStats(calculatedStats);
-    setLoading(false);
-  };
+  }, [allParticipants, allOrganizations]);
 
 
 

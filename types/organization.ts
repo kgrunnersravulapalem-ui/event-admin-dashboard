@@ -25,6 +25,7 @@ export interface OrganizationStats {
 
   // T-Shirt Stats
   sizeCounts: Record<string, number>;
+  swagSizeCounts: Record<string, number>;
 }
 
 export interface Organization {

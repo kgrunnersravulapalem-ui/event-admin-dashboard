@@ -347,6 +347,9 @@ export const updateOrganizationStats = async (
 /**
  * Recalculate organization stats from actual participant counts
  * This is useful for fixing stats that may have gotten out of sync
+ * 
+ * OPTIMIZED: Uses cached data from Zustand store instead of querying Firestore
+ * This eliminates 100s-1000s of reads per recalculation
  */
 export const recalculateOrganizationStats = async (
   organizationName: string
@@ -358,10 +361,15 @@ export const recalculateOrganizationStats = async (
       return;
     }
 
-    // Query all participants for this organization
-    const participantsRef = collection(db, 'participants');
-    const q = query(participantsRef, where('organization', '==', organizationName));
-    const querySnapshot = await getDocs(q);
+    // ✅ OPTIMIZATION: Use Zustand store instead of Firestore query
+    // This uses cached data from the real-time listener (0 Firestore reads!)
+    const { useParticipantsStore } = await import('@/stores/useParticipantsStore');
+    const { allParticipants } = useParticipantsStore.getState();
+
+    // Filter participants for this organization (in-memory, no Firestore reads)
+    const orgParticipants = allParticipants.filter(
+      p => p.organization === organizationName
+    );
 
     // Count participants by category
     let total = 0;
@@ -369,11 +377,10 @@ export const recalculateOrganizationStats = async (
     let count5K = 0;
     let count10K = 0;
 
-    querySnapshot.docs.forEach((doc) => {
-      const data = doc.data();
+    orgParticipants.forEach((participant) => {
       total++;
 
-      switch (data.category) {
+      switch (participant.category) {
         case '3K':
           count3K++;
           break;
@@ -386,7 +393,7 @@ export const recalculateOrganizationStats = async (
       }
     });
 
-    // Update organization with recalculated stats
+    // Update organization with recalculated stats (only 1 write operation)
     const orgDoc = doc(db, COLLECTION_NAME, org.id);
     await updateDoc(orgDoc, {
       totalParticipants: total,
@@ -395,17 +402,8 @@ export const recalculateOrganizationStats = async (
       category10K: count10K,
       updatedAt: serverTimestamp(),
     });
-
-    console.log(`Recalculated stats for ${organizationName}:`, {
-      total,
-      '3K': count3K,
-      '5K': count5K,
-      '10K': count10K,
-    });
   } catch (error) {
     console.error('Error recalculating organization stats:', error);
     throw new Error('Failed to recalculate organization stats.');
   }
 };
-
-

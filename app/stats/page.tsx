@@ -6,16 +6,15 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Organization } from '@/types';
 
 import { kebabCase } from '@/lib/utils';
-import { toast } from 'react-hot-toast';
-import styles from '@/styles/OverallStats.module.css';
+import { OrganizationStats } from '@/types';
 import { useParticipants } from '@/hooks/useParticipants';
-import { Participant, OrganizationStats } from '@/types';
 import { useOrganizations } from '@/hooks/useOrganizations';
+import styles from '@/styles/OverallStats.module.css';
 
 // Feature flag for safe migration
 const USE_REALTIME_STORE = true;
@@ -61,21 +60,47 @@ interface AggregatedStats {
 
     // T-Shirt Sizes
     sizeCounts: Record<string, number>;
+    swagSizeCounts: Record<string, number>;
 }
 
 const COLORS = {
     male: '#3b82f6',
     female: '#ec4899',
-    swag: '#f43f5e',
+    swag: '#f97316',
     total: '#10b981',
     tshirt: '#8b5cf6',
+    swagTshirt: '#f59e0b',
+    inventory: '#94a3b8',
+};
+
+const TSHIRT_INVENTORY: Record<string, number> = {
+    XS: 50,
+    S: 350,
+    M: 480,
+    L: 600,
+    XL: 400,
+    XXL: 100,
+    XXXL: 20
 };
 
 // Custom tooltip to show sum of male and female
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipPayload {
+    name: string;
+    value: number;
+    color: string;
+    dataKey: string;
+}
+
+interface CustomTooltipProps {
+    active?: boolean;
+    payload?: TooltipPayload[];
+    label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
-        const maleValue = payload.find((p: any) => p.dataKey === 'Male')?.value || 0;
-        const femaleValue = payload.find((p: any) => p.dataKey === 'Female')?.value || 0;
+        const maleValue = payload.find((p) => p.dataKey === 'Male')?.value || 0;
+        const femaleValue = payload.find((p) => p.dataKey === 'Female')?.value || 0;
         const total = Number(maleValue) + Number(femaleValue);
 
         return (
@@ -87,7 +112,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
             }}>
                 <p style={{ margin: '0 0 8px 0', fontWeight: 600, color: '#0f172a' }}>{label}</p>
-                {payload.map((entry: any, index: number) => (
+                {payload.map((entry, index) => (
                     <p key={index} style={{ margin: '4px 0', fontSize: '14px', color: entry.color }}>
                         {entry.name}: {entry.value}
                     </p>
@@ -117,39 +142,10 @@ export default function OverallStatsPage() {
         autoInitialize: USE_REALTIME_STORE
     });
 
-    const [loading, setLoading] = useState(false);
-    const [stats, setStats] = useState<AggregatedStats>({
-        totalParticipants: 0,
-        swagKitTaken: 0,
-        totalMale: 0,
-        totalFemale: 0,
-        total3K: 0,
-        total5K: 0,
-        total10K: 0,
-        male3K: 0,
-        male5K: 0,
-        male10K: 0,
-        female3K: 0,
-        female5K: 0,
-        female10K: 0,
-        swag3K: 0,
-        swag5K: 0,
-        swag10K: 0,
-        sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 },
-    });
+    const loading = isParticipantsLoading || isOrgsLoading;
 
-    const [orgStats, setOrgStats] = useState<Map<string, OrganizationStats>>(new Map());
-
-    // Calculate stats from real-time data
-    useEffect(() => {
-        if (USE_REALTIME_STORE && allParticipants.length > 0 && allOrganizations.length > 0) {
-            calculateRealtimeStats();
-        }
-    }, [USE_REALTIME_STORE, allParticipants, allOrganizations]);
-
-    const calculateRealtimeStats = () => {
-        // 1. Aggregate Global Stats
-        const aggregated: AggregatedStats = {
+    const { stats, orgStats } = useMemo(() => {
+        const emptyStats: AggregatedStats = {
             totalParticipants: 0,
             swagKitTaken: 0,
             totalMale: 0,
@@ -167,7 +163,15 @@ export default function OverallStatsPage() {
             swag5K: 0,
             swag10K: 0,
             sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 },
+            swagSizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 },
         };
+
+        if (!USE_REALTIME_STORE || allParticipants.length === 0 || allOrganizations.length === 0) {
+            return { stats: emptyStats, orgStats: new Map<string, OrganizationStats>() };
+        }
+
+        // 1. Aggregate Global Stats
+        const aggregated: AggregatedStats = { ...emptyStats, sizeCounts: { ...emptyStats.sizeCounts }, swagSizeCounts: { ...emptyStats.swagSizeCounts } };
 
         // Helper to init org stats
         const orgStatsMap = new Map<string, OrganizationStats>();
@@ -179,6 +183,7 @@ export default function OverallStatsPage() {
                 total5K: 0, male5K: 0, female5K: 0, swag5K: 0,
                 total10K: 0, male10K: 0, female10K: 0, swag10K: 0,
                 sizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 },
+                swagSizeCounts: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 },
             });
         });
 
@@ -210,6 +215,9 @@ export default function OverallStatsPage() {
             // T-Shirt Size Aggregation
             if (p.size && aggregated.sizeCounts[p.size] !== undefined) {
                 aggregated.sizeCounts[p.size]++;
+                if (p.swagKitGiven) {
+                    aggregated.swagSizeCounts[p.size]++;
+                }
             }
 
             // Organization Aggregation
@@ -239,20 +247,16 @@ export default function OverallStatsPage() {
                     // Organization T-Shirt Aggregation
                     if (p.size && stats.sizeCounts[p.size] !== undefined) {
                         stats.sizeCounts[p.size]++;
+                        if (p.swagKitGiven) {
+                            stats.swagSizeCounts[p.size]++;
+                        }
                     }
                 }
             }
         });
 
-        setStats(aggregated);
-        setOrgStats(orgStatsMap);
-        setLoading(false);
-    };
-
-    useEffect(() => {
-        // Organizations are now from store
-        // We just calculate stats when data changes
-    }, []);
+        return { stats: aggregated, orgStats: orgStatsMap };
+    }, [allParticipants, allOrganizations]);
 
     // Combined chart data - Category with Gender and Swag breakdown
     const combinedCategoryData = [
@@ -288,7 +292,9 @@ export default function OverallStatsPage() {
     // T-Shirt Size Chart Data
     const tShirtData = Object.entries(stats.sizeCounts).map(([size, count]) => ({
         size,
-        count
+        count,
+        swagCount: stats.swagSizeCounts[size] || 0,
+        inventory: TSHIRT_INVENTORY[size] || 0
     }));
 
     return (
@@ -375,7 +381,9 @@ export default function OverallStatsPage() {
                                     <YAxis />
                                     <Tooltip />
                                     <Legend />
-                                    <Bar dataKey="count" name="Count" fill={COLORS.tshirt} />
+                                    <Bar dataKey="count" name="Total Requested" fill={COLORS.tshirt} />
+                                    <Bar dataKey="swagCount" name="Swag Given" fill={COLORS.swagTshirt} />
+                                    <Bar dataKey="inventory" name="Inventory" fill={COLORS.inventory} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -435,13 +443,18 @@ export default function OverallStatsPage() {
                                                 <div style={{ height: '400px', width: '100%' }}>
                                                     <h4 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '14px', color: '#64748b' }}>T-Shirt Sizes</h4>
                                                     <ResponsiveContainer width="100%" height="100%">
-                                                        <BarChart data={Object.entries(orgStatsData.sizeCounts).map(([size, count]) => ({ size, count }))}>
+                                                        <BarChart data={Object.entries(orgStatsData.sizeCounts).map(([size, count]) => ({
+                                                            size,
+                                                            count,
+                                                            swagCount: orgStatsData.swagSizeCounts[size] || 0
+                                                        }))}>
                                                             <CartesianGrid strokeDasharray="3 3" />
                                                             <XAxis dataKey="size" />
                                                             <YAxis />
                                                             <Tooltip />
                                                             <Legend />
-                                                            <Bar dataKey="count" name="Count" fill={COLORS.tshirt} />
+                                                            <Bar dataKey="count" name="Total" fill={COLORS.tshirt} />
+                                                            <Bar dataKey="swagCount" name="Swag" fill={COLORS.swagTshirt} />
                                                         </BarChart>
                                                     </ResponsiveContainer>
                                                 </div>

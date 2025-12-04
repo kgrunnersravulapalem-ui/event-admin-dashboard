@@ -76,6 +76,7 @@ export default function ParticipantsPage() {
     category: '3K',
     size: '',
     bibNumber: '',
+    swagKitGiven: false,
   });
   const [bibDuplicate, setBibDuplicate] = useState<Participant | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -304,6 +305,7 @@ export default function ParticipantsPage() {
       category: participant.category,
       size: participant.size,
       bibNumber: participant.bibNumber || '',
+      swagKitGiven: participant.swagKitGiven || false,
     });
     setBibDuplicate(null);
     setIsEditModalOpen(true);
@@ -313,7 +315,10 @@ export default function ParticipantsPage() {
    * Handle form input change
    */
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const target = e.target as HTMLInputElement;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
+    const name = target.name;
+
     setEditFormData(prev => ({
       ...prev,
       [name]: value,

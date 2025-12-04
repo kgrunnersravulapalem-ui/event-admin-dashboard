@@ -118,6 +118,18 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                     <div
                         key={participant.id}
                         className={`${styles.participantCard} ${participant.disabled ? styles.disabledRow : ''}`}
+                        onClick={(e) => {
+                            // Don't trigger edit if clicking checkbox, toggle, or action menu
+                            if (
+                                (e.target as Element).closest(`.${styles.checkboxCell}`) ||
+                                (e.target as Element).closest(`.${styles.swagKitCell}`) ||
+                                (e.target as Element).closest(`.${styles.actionsCell}`)
+                            ) {
+                                return;
+                            }
+                            onEdit(participant);
+                        }}
+                        style={{ cursor: 'pointer' }}
                     >
                         <div className={styles.checkboxCell}>
                             <input
@@ -207,7 +219,9 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                                     <button
                                         className={`${styles.menuItem} ${styles.menuItemDanger}`}
                                         onClick={() => {
-                                            participant.id && onDelete(participant.id, participant.name);
+                                            if (participant.id) {
+                                                onDelete(participant.id, participant.name);
+                                            }
                                             setOpenMenuId(null);
                                         }}
                                     >
