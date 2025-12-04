@@ -20,6 +20,7 @@ import {
 import { toast } from 'react-hot-toast';
 import styles from '@/styles/Organizations.module.css';
 import { useOrganizations } from '@/hooks/useOrganizations';
+import { useParticipants } from '@/hooks/useParticipants';
 
 /**
  * Format organization name to kebab-case with first letter capital
@@ -43,6 +44,12 @@ export default function OrganizationsPage() {
     allOrganizations,
     isLoading: isStoreLoading,
   } = useOrganizations({
+    autoInitialize: true
+  });
+
+  const {
+    allParticipants
+  } = useParticipants({
     autoInitialize: true
   });
 
@@ -225,6 +232,7 @@ export default function OrganizationsPage() {
               <div className={styles.listHeader}>
                 <div>Organization Name</div>
                 <div className={styles.statsHeader}>Total</div>
+                <div className={styles.statsHeader}>Swag Taken</div>
                 <div className={styles.statsHeader}>3K</div>
                 <div className={styles.statsHeader}>5K</div>
                 <div className={styles.statsHeader}>10K</div>
@@ -234,6 +242,9 @@ export default function OrganizationsPage() {
                 <div key={org.id} className={styles.orgCard}>
                   <div className={styles.orgName}>{formatOrgName(org.name)}</div>
                   <div className={styles.statValue} data-label="Total">{org.totalParticipants || 0}</div>
+                  <div className={styles.statValue} data-label="Swag Taken">
+                    {allParticipants.filter(p => p.organization === org.name && p.swagKitGiven).length}
+                  </div>
                   <div className={styles.statValue} data-label="3K">{org.category3K || 0}</div>
                   <div className={styles.statValue} data-label="5K">{org.category5K || 0}</div>
                   <div className={styles.statValue} data-label="10K">{org.category10K || 0}</div>

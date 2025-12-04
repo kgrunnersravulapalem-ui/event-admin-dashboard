@@ -6,7 +6,8 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Dropdown } from '@/components/ui';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Organization } from '@/types';
 
@@ -141,6 +142,8 @@ export default function OverallStatsPage() {
     } = useOrganizations({
         autoInitialize: USE_REALTIME_STORE
     });
+
+    const [selectedOrg, setSelectedOrg] = useState<string>('');
 
     const loading = isParticipantsLoading || isOrgsLoading;
 
@@ -390,78 +393,97 @@ export default function OverallStatsPage() {
 
                         {/* Organization-Specific Breakdown */}
                         <div className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Organization/School Specific Breakdown</h2>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>Organization/School Specific Breakdown</h2>
+                                <div style={{ width: '300px' }}>
+                                    <Dropdown
+                                        label=""
+                                        name="organization"
+                                        options={[
+                                            { value: '', label: 'All Organizations' },
+                                            ...allOrganizations.map(org => ({
+                                                value: org.name,
+                                                label: org.name
+                                            }))
+                                        ]}
+                                        value={selectedOrg}
+                                        onChange={(e) => setSelectedOrg(e.target.value)}
+                                    />
+                                </div>
+                            </div>
                             <div className={styles.orgChartsGrid}>
-                                {allOrganizations.map(org => {
-                                    const orgStatsData = orgStats.get(org.name);
-                                    if (!orgStatsData || orgStatsData.totalParticipants === 0) return null;
+                                {allOrganizations
+                                    .filter(org => !selectedOrg || org.name === selectedOrg)
+                                    .map(org => {
+                                        const orgStatsData = orgStats.get(org.name);
+                                        if (!orgStatsData || orgStatsData.totalParticipants === 0) return null;
 
-                                    const orgCombinedData = [
-                                        {
-                                            category: '3K',
-                                            Male: orgStatsData.male3K,
-                                            Female: orgStatsData.female3K,
-                                            Swag: orgStatsData.swag3K
-                                        },
-                                        {
-                                            category: '5K',
-                                            Male: orgStatsData.male5K,
-                                            Female: orgStatsData.female5K,
-                                            Swag: orgStatsData.swag5K
-                                        },
-                                        {
-                                            category: '10K',
-                                            Male: orgStatsData.male10K,
-                                            Female: orgStatsData.female10K,
-                                            Swag: orgStatsData.swag10K
-                                        },
-                                    ];
+                                        const orgCombinedData = [
+                                            {
+                                                category: '3K',
+                                                Male: orgStatsData.male3K,
+                                                Female: orgStatsData.female3K,
+                                                Swag: orgStatsData.swag3K
+                                            },
+                                            {
+                                                category: '5K',
+                                                Male: orgStatsData.male5K,
+                                                Female: orgStatsData.female5K,
+                                                Swag: orgStatsData.swag5K
+                                            },
+                                            {
+                                                category: '10K',
+                                                Male: orgStatsData.male10K,
+                                                Female: orgStatsData.female10K,
+                                                Swag: orgStatsData.swag10K
+                                            },
+                                        ];
 
-                                    return (
-                                        <div key={org.id} className={styles.orgChartCard}>
-                                            <h3 className={styles.orgChartTitle}>{kebabCase(org.name)}</h3>
-                                            <div className={styles.orgStats}>
-                                                <span>Total: {orgStatsData.totalParticipants}</span>
-                                                <span>Swag taken: {orgStatsData.swagKitTaken}</span>
-                                            </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                                <div style={{ height: '400px' }}>
-                                                    <h4 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '14px', color: '#64748b' }}>Category & Gender</h4>
-                                                    <ResponsiveContainer width="100%" height="100%">
-                                                        <BarChart data={orgCombinedData}>
-                                                            <CartesianGrid strokeDasharray="3 3" />
-                                                            <XAxis dataKey="category" />
-                                                            <YAxis />
-                                                            <Tooltip content={<CustomTooltip />} />
-                                                            <Legend />
-                                                            <Bar dataKey="Male" fill={COLORS.male} />
-                                                            <Bar dataKey="Female" fill={COLORS.female} />
-                                                            <Bar dataKey="Swag" fill={COLORS.swag} />
-                                                        </BarChart>
-                                                    </ResponsiveContainer>
+                                        return (
+                                            <div key={org.id} className={styles.orgChartCard}>
+                                                <h3 className={styles.orgChartTitle}>{kebabCase(org.name)}</h3>
+                                                <div className={styles.orgStats}>
+                                                    <span>Total: {orgStatsData.totalParticipants}</span>
+                                                    <span>Swag taken: {orgStatsData.swagKitTaken}</span>
                                                 </div>
-                                                <div style={{ height: '400px', width: '100%' }}>
-                                                    <h4 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '14px', color: '#64748b' }}>T-Shirt Sizes</h4>
-                                                    <ResponsiveContainer width="100%" height="100%">
-                                                        <BarChart data={Object.entries(orgStatsData.sizeCounts).map(([size, count]) => ({
-                                                            size,
-                                                            count,
-                                                            swagCount: orgStatsData.swagSizeCounts[size] || 0
-                                                        }))}>
-                                                            <CartesianGrid strokeDasharray="3 3" />
-                                                            <XAxis dataKey="size" />
-                                                            <YAxis />
-                                                            <Tooltip />
-                                                            <Legend />
-                                                            <Bar dataKey="count" name="Total" fill={COLORS.tshirt} />
-                                                            <Bar dataKey="swagCount" name="Swag" fill={COLORS.swagTshirt} />
-                                                        </BarChart>
-                                                    </ResponsiveContainer>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                                    <div style={{ height: '400px' }}>
+                                                        <h4 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '14px', color: '#64748b' }}>Category & Gender</h4>
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <BarChart data={orgCombinedData}>
+                                                                <CartesianGrid strokeDasharray="3 3" />
+                                                                <XAxis dataKey="category" />
+                                                                <YAxis />
+                                                                <Tooltip content={<CustomTooltip />} />
+                                                                <Legend />
+                                                                <Bar dataKey="Male" fill={COLORS.male} />
+                                                                <Bar dataKey="Female" fill={COLORS.female} />
+                                                                <Bar dataKey="Swag" fill={COLORS.swag} />
+                                                            </BarChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                    <div style={{ height: '400px', width: '100%' }}>
+                                                        <h4 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '14px', color: '#64748b' }}>T-Shirt Sizes</h4>
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <BarChart data={Object.entries(orgStatsData.sizeCounts).map(([size, count]) => ({
+                                                                size,
+                                                                count,
+                                                                swagCount: orgStatsData.swagSizeCounts[size] || 0
+                                                            }))}>
+                                                                <CartesianGrid strokeDasharray="3 3" />
+                                                                <XAxis dataKey="size" />
+                                                                <YAxis />
+                                                                <Tooltip />
+                                                                <Legend />
+                                                                <Bar dataKey="count" name="Total" fill={COLORS.tshirt} />
+                                                                <Bar dataKey="swagCount" name="Swag" fill={COLORS.swagTshirt} />
+                                                            </BarChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
                             </div>
                         </div>
                     </>
