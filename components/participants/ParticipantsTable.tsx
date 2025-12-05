@@ -144,7 +144,14 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                         <div className={styles.organization}>{participant.organization}</div>
                         <div className={styles.detail}>{participant.mobileNumber}</div>
                         <div className={styles.detail}>{participant.gender}</div>
-                        <div className={styles.detail}>{participant.category}</div>
+                        <div className={styles.detail}>
+                            <span className={`${styles.categoryBadge} ${participant.category === '3K' ? styles.category3K :
+                                    participant.category === '5K' ? styles.category5K :
+                                        participant.category === '10K' ? styles.category10K : ''
+                                }`}>
+                                {participant.category}
+                            </span>
+                        </div>
                         <div className={styles.detail}>{participant.size}</div>
                         <div className={styles.bibCell}>
                             {participant.bibNumber ? (

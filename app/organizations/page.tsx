@@ -243,7 +243,9 @@ export default function OrganizationsPage() {
                   <div className={styles.orgName}>{formatOrgName(org.name)}</div>
                   <div className={styles.statValue} data-label="Total">{org.totalParticipants || 0}</div>
                   <div className={styles.statValue} data-label="Swag Taken">
-                    {allParticipants.filter(p => p.organization === org.name && p.swagKitGiven).length}
+                    <span className={styles.swagBadge}>
+                      {allParticipants.filter(p => p.organization === org.name && p.swagKitGiven).length}
+                    </span>
                   </div>
                   <div className={styles.statValue} data-label="3K">{org.category3K || 0}</div>
                   <div className={styles.statValue} data-label="5K">{org.category5K || 0}</div>
