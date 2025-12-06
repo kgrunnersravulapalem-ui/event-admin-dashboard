@@ -57,8 +57,16 @@ export const addParticipant = async (
   try {
     const participantsRef = getParticipantsCollection();
 
+    // Filter out empty optional fields (only bibNumber - keep dateOfBirth and email even if empty)
+    const cleanParticipant: Record<string, any> = { ...participant };
+
+    // Only remove empty bibNumber (dateOfBirth and email should save even if empty)
+    if (cleanParticipant.bibNumber === '') delete cleanParticipant.bibNumber;
+
+    console.log('Adding participant with data:', cleanParticipant);
+
     const docRef = await addDoc(participantsRef, {
-      ...participant,
+      ...cleanParticipant,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -96,12 +104,21 @@ export const updateParticipant = async (
     const oldOrganization = currentData.organization as string;
 
     // Filter out undefined values - Firestore doesn't accept undefined
+    // Only skip empty bibNumber (dateOfBirth and email should save even if empty)
     const cleanData: Record<string, any> = {};
     Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined) {
-        cleanData[key] = value;
+      // Skip undefined values
+      if (value === undefined) return;
+
+      // Only skip empty bibNumber (dateOfBirth and email should save even if empty)
+      if (key === 'bibNumber' && value === '') {
+        return;
       }
+
+      cleanData[key] = value;
     });
+
+    console.log('Updating participant with data:', cleanData);
 
     await updateDoc(participantDoc, {
       ...cleanData,
@@ -356,6 +373,8 @@ const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant
     bibNumber: data.bibNumber || undefined,
     disabled: data.disabled || false,
     swagKitGiven: data.swagKitGiven || false,
+    dateOfBirth: data.dateOfBirth ?? '',
+    email: data.email ?? '',
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
   };
@@ -406,6 +425,11 @@ export const getParticipantById = async (id: string): Promise<Participant | null
         mobileNumber: data.mobileNumber,
         category: data.category,
         size: data.size,
+        bibNumber: data.bibNumber || undefined,
+        disabled: data.disabled || false,
+        swagKitGiven: data.swagKitGiven || false,
+        dateOfBirth: data.dateOfBirth ?? '',
+        email: data.email ?? '',
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
       };
@@ -467,6 +491,8 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     'Organization',
     'Gender',
     'Mobile Number',
+    'Date of Birth',
+    'Email',
     'Category',
     'Size',
     'Bib Number',
@@ -481,6 +507,8 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     p.organization,
     p.gender,
     p.mobileNumber,
+    p.dateOfBirth || '',
+    p.email || '',
     p.category,
     p.size,
     p.bibNumber || '',

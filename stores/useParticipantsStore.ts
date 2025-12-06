@@ -68,6 +68,8 @@ const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant
         bibNumber: data.bibNumber || undefined,
         disabled: data.disabled || false,
         swagKitGiven: data.swagKitGiven || false,
+        dateOfBirth: data.dateOfBirth ?? '',
+        email: data.email ?? '',
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
     };
