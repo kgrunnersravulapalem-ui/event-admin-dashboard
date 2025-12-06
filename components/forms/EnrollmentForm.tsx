@@ -102,6 +102,8 @@ const initialFormData: Omit<Participant, 'id' | 'createdAt'> = {
   size: '',
   bibNumber: '',
   swagKitGiven: false, // Default to false
+  dateOfBirth: '',
+  email: '',
 };
 
 /**
@@ -134,6 +136,26 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
   }, []);
 
   /**
+   * Format date of birth with automatic forward slashes
+   */
+  const formatDateOfBirth = (value: string): string => {
+    // Remove all non-digit characters
+    const digitsOnly = value.replace(/\D/g, '');
+
+    // Limit to 8 digits (ddmmyyyy)
+    const limited = digitsOnly.slice(0, 8);
+
+    // Add slashes automatically
+    if (limited.length <= 2) {
+      return limited;
+    } else if (limited.length <= 4) {
+      return `${limited.slice(0, 2)}/${limited.slice(2)}`;
+    } else {
+      return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+    }
+  };
+
+  /**
    * Handle input change
    */
   const handleChange = (
@@ -141,9 +163,12 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
   ) => {
     const { name, value } = e.target;
 
+    // Format date of birth automatically
+    const formattedValue = name === 'dateOfBirth' ? formatDateOfBirth(value) : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: formattedValue,
     }));
 
     // Clear error for this field when user starts typing
@@ -307,6 +332,30 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           required
         // autoComplete="tel"
         />
+
+        {/* Date of Birth (Optional) */}
+        <Input
+          label="Date of Birth (Optional)"
+          name="dateOfBirth"
+          type="text"
+          placeholder="dd/mm/yyyy"
+          value={formData.dateOfBirth || ''}
+          onChange={handleChange}
+          error={errors.dateOfBirth}
+          maxLength={10}
+        />
+
+        {/* Email (Optional) */}
+        <Input
+          label="Email (Optional)"
+          name="email"
+          type="email"
+          placeholder="Enter your email address"
+          value={formData.email || ''}
+          onChange={handleChange}
+          error={errors.email}
+        />
+
 
         {/* T-Shirt Size */}
         <RadioGroup

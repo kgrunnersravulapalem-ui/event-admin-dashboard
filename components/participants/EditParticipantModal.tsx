@@ -86,6 +86,25 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                     required
                 />
 
+                <Input
+                    label="Date of Birth (Optional)"
+                    name="dateOfBirth"
+                    type="text"
+                    placeholder="dd/mm/yyyy"
+                    value={editFormData.dateOfBirth || ''}
+                    onChange={onInputChange}
+                    maxLength={10}
+                />
+
+                <Input
+                    label="Email (Optional)"
+                    name="email"
+                    type="email"
+                    placeholder="Enter email address"
+                    value={editFormData.email || ''}
+                    onChange={onInputChange}
+                />
+
                 <RadioGroup
                     label="Category"
                     name="category"

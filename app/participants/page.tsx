@@ -77,6 +77,8 @@ export default function ParticipantsPage() {
     size: '',
     bibNumber: '',
     swagKitGiven: false,
+    dateOfBirth: '',
+    email: '',
   });
   const [bibDuplicate, setBibDuplicate] = useState<Participant | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -306,9 +308,31 @@ export default function ParticipantsPage() {
       size: participant.size,
       bibNumber: participant.bibNumber || '',
       swagKitGiven: participant.swagKitGiven || false,
+      dateOfBirth: participant.dateOfBirth || '',
+      email: participant.email || '',
     });
     setBibDuplicate(null);
     setIsEditModalOpen(true);
+  };
+
+  /**
+   * Format date of birth with automatic forward slashes
+   */
+  const formatDateOfBirth = (value: string): string => {
+    // Remove all non-digit characters
+    const digitsOnly = value.replace(/\D/g, '');
+
+    // Limit to 8 digits (ddmmyyyy)
+    const limited = digitsOnly.slice(0, 8);
+
+    // Add slashes automatically
+    if (limited.length <= 2) {
+      return limited;
+    } else if (limited.length <= 4) {
+      return `${limited.slice(0, 2)}/${limited.slice(2)}`;
+    } else {
+      return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+    }
   };
 
   /**
@@ -319,9 +343,14 @@ export default function ParticipantsPage() {
     const value = target.type === 'checkbox' ? target.checked : target.value;
     const name = target.name;
 
+    // Format date of birth automatically
+    const formattedValue = name === 'dateOfBirth' && typeof value === 'string'
+      ? formatDateOfBirth(value)
+      : value;
+
     setEditFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: formattedValue,
     }));
 
     // Clear bib duplicate when changing bib number

@@ -16,6 +16,8 @@ export interface Participant {
   bibNumber?: string; // Unique bib number for the participant (e.g., "RUN-101")
   disabled?: boolean; // If true, participant is unenrolled but not deleted
   swagKitGiven?: boolean; // If true, swag kit has been given to participant
+  dateOfBirth?: string; // Date of birth in dd/mm/yyyy format
+  email?: string; // Email address
   createdAt?: Date;
   updatedAt?: Date;
 }
