@@ -7,14 +7,14 @@
 
 export const appConfig = {
     // Event Details
-    eventName: 'Tanuku Road Run 2025',
+    eventName: 'Konaseema Run',
     eventDate: '2025-01-26', // Example date
-    eventDescription: 'Official admin dashboard for Tanuku Road Run 2025 event management',
-    eventOrganization: 'Tanuku Runners',
+    eventDescription: 'Official admin dashboard for Konaseema Run event management',
+    eventOrganization: 'Konaseema Runners',
 
     // Authentication (Dummy Credentials)
     auth: {
-        username: 'admin@konaseemarunners.com',
+        username: 'admin@konaseemarun.com',
         password: 'password123', // Dummy password
         sessionTimeout: 6 * 60 * 60 * 1000, // 6 hours in milliseconds
     },
