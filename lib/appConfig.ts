@@ -14,7 +14,7 @@ export const appConfig = {
 
     // Authentication (Dummy Credentials)
     auth: {
-        username: 'admin@konaseemarunners.com',
+        username: 'admin@tanukurun.com',
         password: 'password123', // Dummy password
         sessionTimeout: 6 * 60 * 60 * 1000, // 6 hours in milliseconds
     },
