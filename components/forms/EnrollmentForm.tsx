@@ -26,8 +26,8 @@ import styles from '@/styles/EnrollmentForm.module.css';
 /**
  * LocalStorage key for persisted organization
  */
-const STORAGE_KEY = 'trr_selected_organization';
-const STORAGE_EXPIRY_KEY = 'trr_organization_expiry';
+const STORAGE_KEY = 'rrr_selected_organization';
+const STORAGE_EXPIRY_KEY = 'rrr_organization_expiry';
 const EXPIRY_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**

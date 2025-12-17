@@ -1,11 +1,11 @@
 {
   "name": "Road Run - Admin Dashboard",
-  "short_name": "TRR Admin",
+  "short_name": "Admin",
   "description": "Official admin dashboard for Road Run event management",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f8fafc",
-  "theme_color": "#14b8a6",
+  "theme_color": "#06b6d4",
   "orientation": "portrait-primary",
   "icons": [
     {
