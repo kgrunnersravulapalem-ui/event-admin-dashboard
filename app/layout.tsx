@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ToastProvider from "@/components/ToastProvider";
+import { appConfig } from "@/lib/appConfig";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,14 +23,13 @@ export const viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Tanuku Road Run - Admin Dashboard",
-    template: "%s | Tanuku Road Run",
+    default: `${appConfig.eventName} - Admin Dashboard`,
+    template: `%s | ${appConfig.eventName}`,
   },
-  description: "Official admin dashboard for Tanuku Road Run. Manage participants, organizations, enrollments, and event data for the annual road running event in Tanuku.",
+  description: `Official admin dashboard for ${appConfig.eventName}. Manage participants, organizations, enrollments, and event data for the annual road running event.`,
   keywords: [
-    "Tanuku Road Run",
-    "Road Run ",
-    "Tanuku",
+    appConfig.eventName,
+    "Road Run",
     "Running Event",
     "Marathon",
     "5K Run",
@@ -39,9 +39,9 @@ export const metadata: Metadata = {
     "Participant Registration",
     "Admin Dashboard",
   ],
-  authors: [{ name: "Tanuku Road Run Organizers" }],
-  creator: "Tanuku Road Run",
-  publisher: "Tanuku Road Run",
+  authors: [{ name: `${appConfig.eventOrganization} Organizers` }],
+  creator: appConfig.eventOrganization,
+  publisher: appConfig.eventOrganization,
   robots: {
     index: false,
     follow: false,
@@ -49,14 +49,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    siteName: "Tanuku Road Run  Admin",
-    title: "Tanuku Road Run  - Admin Dashboard",
-    description: "Official admin dashboard to manage participants and event data for Tanuku Road Run .",
+    siteName: `${appConfig.eventName} Admin`,
+    title: `${appConfig.eventName} - Admin Dashboard`,
+    description: `Official admin dashboard to manage participants and event data for ${appConfig.eventName}.`,
   },
   twitter: {
     card: "summary",
-    title: "Tanuku Road Run  - Admin Dashboard",
-    description: "Official admin dashboard to manage participants and event data for Tanuku Road Run .",
+    title: `${appConfig.eventName} - Admin Dashboard`,
+    description: `Official admin dashboard to manage participants and event data for ${appConfig.eventName}.`,
   },
   icons: {
     icon: "/favicon.svg",

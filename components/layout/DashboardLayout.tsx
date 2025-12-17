@@ -127,7 +127,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 strokeLinejoin="round"
               />
             </svg>
-            <span>Tanuku Road Run 2025</span>
+            <span>{appConfig.eventName}</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -236,7 +236,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        <p className={styles.footerBrand}>🏃 Tanuku Road Run 2025</p>
+        <p className={styles.footerBrand}>🏃 {appConfig.eventName}</p>
         <p className={styles.footerCopyright}>© 2025 All rights reserved.</p>
       </footer>
     </div>
