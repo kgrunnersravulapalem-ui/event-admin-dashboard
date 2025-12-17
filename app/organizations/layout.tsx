@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { appConfig } from "@/lib/appConfig";
 
 export const metadata: Metadata = {
   title: "Organizations",
-  description: "Manage participating organizations for Tanuku Road Run 2025. Add, edit, and remove organization entries.",
+  description: `Manage participating organizations for ${appConfig.eventName}. Add, edit, and remove organization entries.`,
 };
 
 export default function OrganizationsLayout({

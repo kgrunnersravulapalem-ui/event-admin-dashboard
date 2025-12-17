@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { appConfig } from "@/lib/appConfig";
 
 export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Overview of Tanuku Road Run 2025 event statistics, participant counts, and quick actions for event management.",
+  description: `Overview of ${appConfig.eventName} event statistics, participant counts, and quick actions for event management.`,
 };
 
 export default function DashboardLayout({

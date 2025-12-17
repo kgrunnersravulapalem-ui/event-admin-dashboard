@@ -1,7 +1,7 @@
 {
-  "name": "Tanuku Road Run 2025 - Admin Dashboard",
+  "name": "Road Run - Admin Dashboard",
   "short_name": "TRR Admin",
-  "description": "Official admin dashboard for Tanuku Road Run 2025 event management",
+  "description": "Official admin dashboard for Road Run event management",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f8fafc",
