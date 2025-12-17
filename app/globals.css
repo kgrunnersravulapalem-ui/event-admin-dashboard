@@ -10,12 +10,12 @@
    * THEME COLORS - Change these to update the entire app
    * ============================================ */
 
-  /* Primary brand colors (Teal theme) */
-  --theme-primary: #14b8a6;
-  --theme-primary-hover: #0d9488;
-  --theme-primary-dark: #0f766e;
-  --theme-primary-light: #f0fdfa;
-  --theme-primary-rgb: 20, 184, 166;
+  /* Primary brand colors (Modern Purple theme) */
+  --theme-primary: #a855f7;
+  --theme-primary-hover: #9333ea;
+  --theme-primary-dark: #7e22ce;
+  --theme-primary-light: #faf5ff;
+  --theme-primary-rgb: 168, 85, 247;
 
   /* Danger/Error colors */
   --theme-danger: #ef4444;
@@ -38,8 +38,8 @@
   --theme-border-dark: #cbd5e1;
 
   /* Header/Footer gradient */
-  --theme-header-start: #0f766e;
-  --theme-header-end: #14b8a6;
+  --theme-header-start: #7e22ce;
+  --theme-header-end: #a855f7;
 
   /* ============================================
    * Layout variables
