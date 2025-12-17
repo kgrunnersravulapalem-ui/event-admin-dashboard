@@ -16,52 +16,12 @@ import { Button, Input, Dropdown, RadioGroup } from '@/components/ui';
 import { addParticipant, validateParticipant } from '@/lib/firestoreService';
 import { checkBibNumberDuplicate } from '@/lib/participantsService';
 import { Participant } from '@/types';
+import { appConfig } from '@/lib/appConfig';
 import styles from '@/styles/EnrollmentForm.module.css';
 
 /**
- * Gender options
+ * LocalStorage key for persisted organization
  */
-const GENDER_OPTIONS = [
-  { value: 'Male', label: 'Male' },
-  { value: 'Female', label: 'Female' },
-  { value: 'Other', label: 'Other' },
-];
-
-/**
- * Category options for race distance
- */
-const CATEGORY_OPTIONS = [
-  { value: '3K', label: '3K' },
-  { value: '5K', label: '5K' },
-  { value: '10K', label: '10K' },
-];
-
-/**
- * T-shirt size options
- */
-const SIZE_OPTIONS = [
-  { value: 'XS', label: 'XS' },
-  { value: 'S', label: 'S' },
-  { value: 'M', label: 'M' },
-  { value: 'L', label: 'L' },
-  { value: 'XL', label: 'XL' },
-  { value: 'XXL', label: 'XXL' },
-  { value: 'XXXL', label: 'XXXL' },
-];
-
-/**
- * Blood Group options
- */
-const BLOOD_GROUP_OPTIONS = [
-  { value: 'A+', label: 'A+' },
-  { value: 'A-', label: 'A-' },
-  { value: 'B+', label: 'B+' },
-  { value: 'B-', label: 'B-' },
-  { value: 'AB+', label: 'AB+' },
-  { value: 'AB-', label: 'AB-' },
-  { value: 'O+', label: 'O+' },
-  { value: 'O-', label: 'O-' },
-];
 
 /**
  * LocalStorage key for persisted organization
@@ -312,7 +272,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           <RadioGroup
             label="Gender"
             name="gender"
-            options={GENDER_OPTIONS}
+            options={appConfig.constants.genders}
             value={formData.gender}
             onChange={handleChange}
             error={errors.gender}
@@ -323,7 +283,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           <RadioGroup
             label="Race Category"
             name="category"
-            options={CATEGORY_OPTIONS}
+            options={appConfig.constants.categories}
             value={formData.category}
             onChange={handleChange}
             error={errors.category}
@@ -356,6 +316,29 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           maxLength={10}
         />
 
+        {/* T-Shirt Size */}
+        <RadioGroup
+          label="T-Shirt Size"
+          name="size"
+          options={appConfig.constants.shirtSizes}
+          value={formData.size}
+          onChange={handleChange}
+          error={errors.size}
+          columns={4}
+        />
+
+        {/* Blood Group (Optional) */}
+        {/* Blood Group (Optional) */}
+        <RadioGroup
+          label="Blood Group (Optional)"
+          name="bloodGroup"
+          options={appConfig.constants.bloodGroups}
+          value={formData.bloodGroup || ''}
+          onChange={handleChange}
+          error={errors.bloodGroup}
+          columns={4}
+        />
+
         {/* Email (Optional) */}
         <Input
           label="Email (Optional)"
@@ -367,44 +350,21 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           error={errors.email}
         />
 
-        {/* Blood Group (Optional) */}
-        <Dropdown
-          label="Blood Group (Optional)"
-          name="bloodGroup"
-          options={[
-            { value: '', label: 'Select Blood Group' },
-            ...BLOOD_GROUP_OPTIONS
-          ]}
-          placeholder="Select Blood Group"
-          value={formData.bloodGroup || ''}
+        {/* Bib Number (Optional) */}
+        <Input
+          label="Bib Number (Optional)"
+          name="bibNumber"
+          type="text"
+          placeholder="e.g., 3K-101"
+          value={formData.bibNumber || ''}
           onChange={handleChange}
-          error={errors.bloodGroup}
+          error={errors.bibNumber}
         />
 
-
-        {/* T-Shirt Size */}
-        <RadioGroup
-          label="T-Shirt Size"
-          name="size"
-          options={SIZE_OPTIONS}
-          value={formData.size}
-          onChange={handleChange}
-          error={errors.size}
-          columns={3}
-        />
 
         {/* Bib Number and Swag Kit Row */}
         <div className={styles.rowGroup}>
-          {/* Bib Number (Optional) */}
-          <Input
-            label="Bib Number (Optional)"
-            name="bibNumber"
-            type="text"
-            placeholder="e.g., 3K-101"
-            value={formData.bibNumber || ''}
-            onChange={handleChange}
-            error={errors.bibNumber}
-          />
+
 
           {/* Swag Kit Toggle (Optional) */}
           <div className={styles.swagFieldWrapper}>

@@ -10,7 +10,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { appConfig } from '@/lib/appConfig';
 import styles from '@/styles/DashboardLayout.module.css';
 
 interface DashboardLayoutProps {
@@ -20,6 +22,22 @@ interface DashboardLayoutProps {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { checkSession, logout } = useAuthStore();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  React.useEffect(() => {
+    const isValid = checkSession();
+    if (!isValid) {
+      router.push('/login');
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router, checkSession]);
+
+  if (!isAuthorized) {
+    return null; // Or a loading spinner
+  }
 
   const navItems = [
     {
@@ -128,6 +146,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   </Link>
                 </li>
               ))}
+              <li className={styles.navItem}>
+                <button
+                  onClick={() => {
+                    logout();
+                    router.push('/login');
+                  }}
+                  className={styles.navLink}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+                >
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              </li>
             </ul>
           </nav>
 
@@ -178,6 +211,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </Link>
               </li>
             ))}
+            <li className={styles.navItem}>
+              <button
+                onClick={() => {
+                  logout();
+                  router.push('/login');
+                  closeMobileMenu();
+                }}
+                className={styles.navLink}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Logout</span>
+              </button>
+            </li>
           </ul>
         </nav>
       )}
