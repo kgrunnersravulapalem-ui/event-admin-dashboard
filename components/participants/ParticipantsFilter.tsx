@@ -9,6 +9,7 @@ interface ParticipantsFilterProps {
         category: string;
         gender: string;
         swagKitGiven: boolean | undefined;
+        isPaid: boolean | undefined;
         startDate?: Date;
         endDate?: Date;
     };
@@ -17,6 +18,7 @@ interface ParticipantsFilterProps {
         category: string;
         gender: string;
         swagKitGiven: boolean | undefined;
+        isPaid: boolean | undefined;
         startDate?: Date;
         endDate?: Date;
     }) => void;
@@ -146,6 +148,30 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                                 const swagKitGiven =
                                     value === '' ? undefined : value === 'true';
                                 setFilters({ ...filters, swagKitGiven });
+                            }}
+                        />
+                    </div>
+
+                    <div className={styles.filterItem}>
+                        <Dropdown
+                            label="Paid Status"
+                            options={[
+                                { value: '', label: 'All' },
+                                { value: 'true', label: 'Paid' },
+                                { value: 'false', label: 'Not Paid' },
+                            ]}
+                            value={
+                                filters.isPaid === undefined
+                                    ? ''
+                                    : filters.isPaid
+                                        ? 'true'
+                                        : 'false'
+                            }
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                const isPaid =
+                                    value === '' ? undefined : value === 'true';
+                                setFilters({ ...filters, isPaid });
                             }}
                         />
                     </div>

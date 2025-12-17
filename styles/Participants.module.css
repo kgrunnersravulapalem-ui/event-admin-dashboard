@@ -207,9 +207,9 @@
 }
 
 .participantCard {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.5rem;
   display: grid;
-  grid-template-columns: 40px 50px 2fr 1.5fr 1fr 0.8fr 0.8fr 0.6fr 0.7fr 70px 50px;
+  grid-template-columns: 40px 40px 1.2fr 1.2fr 1fr 0.8fr 0.8fr 0.5fr 0.7fr 0.7fr 70px 40px;
   gap: 0.5rem;
   align-items: center;
   border-bottom: 1px solid var(--theme-bg-tertiary);
@@ -241,6 +241,11 @@
   font-weight: 700;
   color: #0f172a;
   margin: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  text-align: center;
+  line-height: 1.3;
 }
 
 .participantDetails {
@@ -254,6 +259,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
+  text-align: center;
 }
 
 .participantMeta {
@@ -271,6 +277,8 @@
   padding: 0.125rem 0.5rem;
   border-radius: 4px;
   display: inline-block;
+  text-align: center;
+  max-width: 100%;
 }
 
 .date {
@@ -370,9 +378,9 @@
 
 /* Table Header */
 .listHeader {
-  padding: 0.625rem 1rem;
+  padding: 0.625rem 0.5rem;
   display: grid;
-  grid-template-columns: 40px 50px 2fr 1.5fr 1fr 0.8fr 0.8fr 0.6fr 0.7fr 70px 50px;
+  grid-template-columns: 40px 40px 1.2fr 1.2fr 1fr 0.8fr 0.8fr 0.5fr 0.7fr 0.7fr 70px 40px;
   gap: 0.5rem;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -382,6 +390,7 @@
   background: #f1f5f9;
   border-bottom: 2px solid #e2e8f0;
   min-width: 1000px;
+  text-align: center;
 }
 
 /* Loading & Empty States */

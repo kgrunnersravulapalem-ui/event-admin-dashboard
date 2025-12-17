@@ -20,6 +20,7 @@ export interface UseParticipantsFilters {
     category?: string;
     gender?: string;
     swagKitGiven?: boolean;
+    isPaid?: boolean;
     searchTerm?: string;
     startDate?: Date;
     endDate?: Date;
@@ -120,6 +121,11 @@ export function useParticipants(options: UseParticipantsOptions = {}): UsePartic
         // Swag kit filter
         if (filters.swagKitGiven !== undefined) {
             result = result.filter(p => p.swagKitGiven === filters.swagKitGiven);
+        }
+
+        // Paid filter
+        if (filters.isPaid !== undefined) {
+            result = result.filter(p => p.isPaid === filters.isPaid);
         }
 
         // Date range filters

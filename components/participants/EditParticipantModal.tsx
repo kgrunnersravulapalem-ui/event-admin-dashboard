@@ -169,6 +169,24 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                             <span className={styles.toggleSlider}></span>
                         </label>
                     </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                        <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>
+                            Paid Status
+                        </label>
+                        <div className={styles.swagKitCell} style={{ justifyContent: 'flex-start' }}>
+                            <label className={styles.toggleSwitch}>
+                                <input
+                                    type="checkbox"
+                                    name="isPaid"
+                                    checked={editFormData.isPaid || false}
+                                    onChange={onInputChange}
+                                    className={styles.toggleInput}
+                                />
+                                <span className={styles.toggleSlider}></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </Modal>

@@ -178,6 +178,7 @@ export interface ParticipantFilters {
   endDate?: Date;
   searchTerm?: string;
   swagKitGiven?: boolean; // Filter by swag kit status
+  isPaid?: boolean; // Filter by paid status
 }
 
 export interface PaginatedResult {
@@ -252,6 +253,11 @@ const applyClientSideFilters = (
   // Apply swag kit filter
   if (filters?.swagKitGiven !== undefined) {
     result = result.filter(p => p.swagKitGiven === filters.swagKitGiven);
+  }
+
+  // Apply paid filter
+  if (filters?.isPaid !== undefined) {
+    result = result.filter(p => p.isPaid === filters.isPaid);
   }
 
   // Apply date range filters
@@ -373,6 +379,7 @@ const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant
     bibNumber: data.bibNumber || undefined,
     disabled: data.disabled || false,
     swagKitGiven: data.swagKitGiven || false,
+    isPaid: data.isPaid || false,
     dateOfBirth: data.dateOfBirth ?? '',
     email: data.email ?? '',
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
@@ -448,35 +455,19 @@ export const getParticipantById = async (id: string): Promise<Participant | null
 export const validateParticipant = (
   participant: Omit<Participant, 'id' | 'createdAt' | 'updatedAt'>
 ): string | null => {
-  if (!participant.organization || participant.organization.trim() === '') {
-    return 'Organization is required';
-  }
+  // Return null immediately to skip required field validation
+  // As per requirement: "remove the required fields logic... whatever is filled the form should be saved."
 
-  if (!participant.name || participant.name.trim() === '') {
-    return 'Name is required';
-  }
-
-  if (!participant.gender) {
-    return 'Gender is required';
-  }
-
-  if (!participant.mobileNumber || participant.mobileNumber.trim() === '') {
-    return 'Mobile number is required';
-  }
-
-  // Basic mobile number validation (10-15 digits)
-  const mobileRegex = /^[0-9]{10,15}$/;
-  const cleanedNumber = participant.mobileNumber.replace(/[\s\-\(\)]/g, '');
-  if (!mobileRegex.test(cleanedNumber)) {
-    return 'Please enter a valid mobile number (10-15 digits)';
-  }
-
-  if (!participant.category) {
-    return 'Category is required';
-  }
-
-  if (!participant.size || participant.size.trim() === '') {
-    return 'Size is required';
+  // Optional: We can still validate format IF a value is provided, but for now let's be permissive
+  if (participant.mobileNumber && participant.mobileNumber.trim() !== '') {
+    // Basic mobile number validation (only if provided)
+    const mobileRegex = /^[0-9]{10,15}$/;
+    const cleanedNumber = participant.mobileNumber.replace(/[\s\-\(\)]/g, '');
+    if (!mobileRegex.test(cleanedNumber)) {
+      // Ideally we warn but maybe we should allow saving even if invalid format if "whatever is filled" is strict?
+      // Let's keep format validation for data sanity, but remove required check.
+      return 'Please enter a valid mobile number (10-15 digits)';
+    }
   }
 
   return null;

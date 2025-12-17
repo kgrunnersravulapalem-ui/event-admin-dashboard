@@ -102,6 +102,7 @@ const initialFormData: Omit<Participant, 'id' | 'createdAt'> = {
   size: '',
   bibNumber: '',
   swagKitGiven: false, // Default to false
+  isPaid: false, // Default to false
   dateOfBirth: '',
   email: '',
 };
@@ -277,7 +278,6 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           value={formData.organization}
           onChange={handleChange}
           error={errors.organization}
-          required
         />
 
         {/* Name */}
@@ -289,7 +289,6 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           value={formData.name}
           onChange={handleChange}
           error={errors.name}
-          required
         // autoComplete="name"
         />
 
@@ -303,7 +302,6 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
             onChange={handleChange}
             error={errors.gender}
             direction="horizontal"
-            required
             columns={3}
           />
 
@@ -315,7 +313,6 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
             onChange={handleChange}
             error={errors.category}
             direction="horizontal"
-            required
             columns={3}
           />
         </div>
@@ -329,7 +326,6 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           value={formData.mobileNumber}
           onChange={handleChange}
           error={errors.mobileNumber}
-          required
         // autoComplete="tel"
         />
 
@@ -366,7 +362,6 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           onChange={handleChange}
           error={errors.size}
           columns={3}
-          required
         />
 
         {/* Bib Number and Swag Kit Row */}
@@ -391,6 +386,21 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
                 name="swagKitGiven"
                 checked={formData.swagKitGiven || false}
                 onChange={(e) => setFormData(prev => ({ ...prev, swagKitGiven: e.target.checked }))}
+                className={styles.toggleInput}
+              />
+              <span className={styles.toggleSlider}></span>
+            </label>
+          </div>
+
+          {/* Paid Toggle (Optional) */}
+          <div className={styles.swagFieldWrapper}>
+            <div className={styles.swagLabel}>Paid (Optional)</div>
+            <label className={styles.toggleSwitch}>
+              <input
+                type="checkbox"
+                name="isPaid"
+                checked={formData.isPaid || false}
+                onChange={(e) => setFormData(prev => ({ ...prev, isPaid: e.target.checked }))}
                 className={styles.toggleInput}
               />
               <span className={styles.toggleSlider}></span>

@@ -110,9 +110,10 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                     <div>Gender</div>
                     <div>Category</div>
                     <div>Size</div>
-                    <div>Bib Number</div>
+                    <div>Bib</div>
+                    <div>Paid</div>
                     <div>Swag Kit</div>
-                    <div>Actions</div>
+                    <div></div>
                 </div>
                 {participants.map((participant: Participant, index) => (
                     <div
@@ -146,8 +147,8 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                         <div className={styles.detail}>{participant.gender}</div>
                         <div className={styles.detail}>
                             <span className={`${styles.categoryBadge} ${participant.category === '3K' ? styles.category3K :
-                                    participant.category === '5K' ? styles.category5K :
-                                        participant.category === '10K' ? styles.category10K : ''
+                                participant.category === '5K' ? styles.category5K :
+                                    participant.category === '10K' ? styles.category10K : ''
                                 }`}>
                                 {participant.category}
                             </span>
@@ -159,6 +160,20 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                             ) : (
                                 <span className={styles.noBib}>-</span>
                             )}
+                        </div>
+                        <div className={styles.detail} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span
+                                style={{
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                    backgroundColor: participant.isPaid ? '#dcfce7' : '#f1f5f9',
+                                    color: participant.isPaid ? '#166534' : '#64748b',
+                                }}
+                            >
+                                {participant.isPaid ? 'Paid' : 'Unpaid'}
+                            </span>
                         </div>
                         <div className={styles.swagKitCell}>
                             <label className={styles.toggleSwitch}>

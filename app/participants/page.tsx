@@ -53,6 +53,7 @@ export default function ParticipantsPage() {
     category: '',
     gender: '',
     swagKitGiven: undefined as boolean | undefined,
+    isPaid: undefined as boolean | undefined,
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
   });
@@ -77,6 +78,7 @@ export default function ParticipantsPage() {
     size: '',
     bibNumber: '',
     swagKitGiven: false,
+    isPaid: false,
     dateOfBirth: '',
     email: '',
   });
@@ -112,6 +114,7 @@ export default function ParticipantsPage() {
         category: '',
         gender: '',
         swagKitGiven: undefined,
+        isPaid: undefined,
         startDate: undefined,
         endDate: undefined,
       });
@@ -125,6 +128,7 @@ export default function ParticipantsPage() {
       category: filters.category,
       gender: filters.gender,
       swagKitGiven: filters.swagKitGiven,
+      isPaid: filters.isPaid,
       searchTerm: debouncedSearchTerm,
       startDate: filters.startDate,
       endDate: filters.endDate,
@@ -177,6 +181,9 @@ export default function ParticipantsPage() {
     }
     if (filters.swagKitGiven !== undefined) {
       apiFilters.swagKitGiven = filters.swagKitGiven;
+    }
+    if (filters.isPaid !== undefined) {
+      apiFilters.isPaid = filters.isPaid;
     }
     if (filters.startDate) {
       apiFilters.startDate = filters.startDate;
@@ -308,6 +315,7 @@ export default function ParticipantsPage() {
       size: participant.size,
       bibNumber: participant.bibNumber || '',
       swagKitGiven: participant.swagKitGiven || false,
+      isPaid: participant.isPaid || false,
       dateOfBirth: participant.dateOfBirth || '',
       email: participant.email || '',
     });
@@ -678,6 +686,7 @@ export default function ParticipantsPage() {
       category: '',
       gender: '',
       swagKitGiven: undefined,
+      isPaid: undefined,
       startDate: undefined,
       endDate: undefined,
     });
@@ -692,6 +701,7 @@ export default function ParticipantsPage() {
     filters.category ||
     filters.gender ||
     filters.swagKitGiven !== undefined ||
+    filters.isPaid !== undefined ||
     filters.startDate ||
     filters.endDate;
 
