@@ -1,18 +1,8 @@
 import React from 'react';
 import { Button, Modal, Input, Dropdown, RadioGroup } from '@/components/ui';
 import { Participant, Organization } from '@/types';
+import { appConfig } from '@/lib/appConfig';
 import styles from '@/styles/Participants.module.css';
-
-const BLOOD_GROUP_OPTIONS = [
-    { value: 'A+', label: 'A+' },
-    { value: 'A-', label: 'A-' },
-    { value: 'B+', label: 'B+' },
-    { value: 'B-', label: 'B-' },
-    { value: 'AB+', label: 'AB+' },
-    { value: 'AB-', label: 'AB-' },
-    { value: 'O+', label: 'O+' },
-    { value: 'O-', label: 'O-' },
-];
 
 interface EditParticipantModalProps {
     isOpen: boolean;
@@ -76,11 +66,7 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                 <RadioGroup
                     label="Gender"
                     name="gender"
-                    options={[
-                        { value: 'Male', label: 'Male' },
-                        { value: 'Female', label: 'Female' },
-                        { value: 'Other', label: 'Other' },
-                    ]}
+                    options={appConfig.constants.genders}
                     value={editFormData.gender}
                     onChange={onInputChange}
                     direction="horizontal"
@@ -118,25 +104,19 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
 
 
 
-                <Dropdown
+                <RadioGroup
                     label="Blood Group (Optional)"
                     name="bloodGroup"
-                    options={[
-                        { value: '', label: 'Select Blood Group' },
-                        ...BLOOD_GROUP_OPTIONS
-                    ]}
+                    options={appConfig.constants.bloodGroups}
                     value={editFormData.bloodGroup || ''}
                     onChange={onInputChange}
+                    columns={4}
                 />
 
                 <RadioGroup
                     label="Category"
                     name="category"
-                    options={[
-                        { value: '3K', label: '3K' },
-                        { value: '5K', label: '5K' },
-                        { value: '10K', label: '10K' },
-                    ]}
+                    options={appConfig.constants.categories}
                     value={editFormData.category}
                     onChange={onInputChange}
                     direction="horizontal"
@@ -147,17 +127,10 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                 <RadioGroup
                     label="T-Shirt Size"
                     name="size"
-                    options={[
-                        { value: 'XS', label: 'XS' },
-                        { value: 'S', label: 'S' },
-                        { value: 'M', label: 'M' },
-                        { value: 'L', label: 'L' },
-                        { value: 'XL', label: 'XL' },
-                        { value: 'XXL', label: 'XXL' },
-                    ]}
+                    options={appConfig.constants.shirtSizes}
                     value={editFormData.size}
                     onChange={onInputChange}
-                    columns={3}
+                    columns={4}
                     required
                 />
 

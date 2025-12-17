@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button, Dropdown } from '@/components/ui';
 import { Organization } from '@/types';
+import { appConfig } from '@/lib/appConfig';
 import styles from '@/styles/Participants.module.css';
 
 interface ParticipantsFilterProps {
@@ -101,9 +102,7 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                             label="Category"
                             options={[
                                 { value: '', label: 'All Categories' },
-                                { value: '3K', label: '3K' },
-                                { value: '5K', label: '5K' },
-                                { value: '10K', label: '10K' },
+                                ...appConfig.constants.categories
                             ]}
                             value={filters.category}
                             onChange={(e) =>
@@ -117,9 +116,7 @@ const ParticipantsFilter: React.FC<ParticipantsFilterProps> = ({
                             label="Gender"
                             options={[
                                 { value: '', label: 'All Genders' },
-                                { value: 'Male', label: 'Male' },
-                                { value: 'Female', label: 'Female' },
-                                { value: 'Other', label: 'Other' },
+                                ...appConfig.constants.genders
                             ]}
                             value={filters.gender}
                             onChange={(e) =>
