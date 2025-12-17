@@ -21,12 +21,12 @@ const firebaseConfig = {
   //   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   //   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   //   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  apiKey: "AIzaSyB2P-vBIPrp-rMVcyirSqaRMDdPEKskix8",
-  authDomain: "tanuku-road-run.firebaseapp.com",
-  projectId: "tanuku-road-run",
-  storageBucket: "tanuku-road-run.firebasestorage.app",
-  messagingSenderId: "112694496160",
-  appId: "1:112694496160:web:49782f261232839b5672c5",
+  apiKey: "AIzaSyCrqHyb6-2gwTzl_SRHtJ7svSDM6zqU8Xs",
+  authDomain: "konaseema-run.firebaseapp.com",
+  projectId: "konaseema-run",
+  storageBucket: "konaseema-run.firebasestorage.app",
+  messagingSenderId: "866739988328",
+  appId: "1:866739988328:web:99f28290a4aba00e67d8dd",
   //   measurementId: "G-N01BSC6V6G"
 };
 
