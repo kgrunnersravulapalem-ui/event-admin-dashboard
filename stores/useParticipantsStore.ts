@@ -71,6 +71,7 @@ const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant
         isPaid: data.isPaid || false,
         dateOfBirth: data.dateOfBirth ?? '',
         email: data.email ?? '',
+        bloodGroup: data.bloodGroup ?? '',
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
     };

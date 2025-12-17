@@ -50,6 +50,20 @@ const SIZE_OPTIONS = [
 ];
 
 /**
+ * Blood Group options
+ */
+const BLOOD_GROUP_OPTIONS = [
+  { value: 'A+', label: 'A+' },
+  { value: 'A-', label: 'A-' },
+  { value: 'B+', label: 'B+' },
+  { value: 'B-', label: 'B-' },
+  { value: 'AB+', label: 'AB+' },
+  { value: 'AB-', label: 'AB-' },
+  { value: 'O+', label: 'O+' },
+  { value: 'O-', label: 'O-' },
+];
+
+/**
  * LocalStorage key for persisted organization
  */
 const STORAGE_KEY = 'trr_selected_organization';
@@ -105,6 +119,7 @@ const initialFormData: Omit<Participant, 'id' | 'createdAt'> = {
   isPaid: false, // Default to false
   dateOfBirth: '',
   email: '',
+  bloodGroup: '',
 };
 
 /**
@@ -350,6 +365,20 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({ organizations }) => {
           value={formData.email || ''}
           onChange={handleChange}
           error={errors.email}
+        />
+
+        {/* Blood Group (Optional) */}
+        <Dropdown
+          label="Blood Group (Optional)"
+          name="bloodGroup"
+          options={[
+            { value: '', label: 'Select Blood Group' },
+            ...BLOOD_GROUP_OPTIONS
+          ]}
+          placeholder="Select Blood Group"
+          value={formData.bloodGroup || ''}
+          onChange={handleChange}
+          error={errors.bloodGroup}
         />
 
 

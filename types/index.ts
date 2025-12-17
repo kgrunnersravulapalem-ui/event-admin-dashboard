@@ -19,6 +19,7 @@ export interface Participant {
   isPaid?: boolean; // If true, participant has paid
   dateOfBirth?: string; // Date of birth in dd/mm/yyyy format
   email?: string; // Email address
+  bloodGroup?: string; // Blood group
   createdAt?: Date;
   updatedAt?: Date;
 }

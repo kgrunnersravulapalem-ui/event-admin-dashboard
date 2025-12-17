@@ -81,6 +81,7 @@ export default function ParticipantsPage() {
     isPaid: false,
     dateOfBirth: '',
     email: '',
+    bloodGroup: '',
   });
   const [bibDuplicate, setBibDuplicate] = useState<Participant | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -318,6 +319,7 @@ export default function ParticipantsPage() {
       isPaid: participant.isPaid || false,
       dateOfBirth: participant.dateOfBirth || '',
       email: participant.email || '',
+      bloodGroup: participant.bloodGroup || '',
     });
     setBibDuplicate(null);
     setIsEditModalOpen(true);

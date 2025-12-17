@@ -3,6 +3,17 @@ import { Button, Modal, Input, Dropdown, RadioGroup } from '@/components/ui';
 import { Participant, Organization } from '@/types';
 import styles from '@/styles/Participants.module.css';
 
+const BLOOD_GROUP_OPTIONS = [
+    { value: 'A+', label: 'A+' },
+    { value: 'A-', label: 'A-' },
+    { value: 'B+', label: 'B+' },
+    { value: 'B-', label: 'B-' },
+    { value: 'AB+', label: 'AB+' },
+    { value: 'AB-', label: 'AB-' },
+    { value: 'O+', label: 'O+' },
+    { value: 'O-', label: 'O-' },
+];
+
 interface EditParticipantModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -102,6 +113,19 @@ const EditParticipantModal: React.FC<EditParticipantModalProps> = ({
                     type="email"
                     placeholder="Enter email address"
                     value={editFormData.email || ''}
+                    onChange={onInputChange}
+                />
+
+
+
+                <Dropdown
+                    label="Blood Group (Optional)"
+                    name="bloodGroup"
+                    options={[
+                        { value: '', label: 'Select Blood Group' },
+                        ...BLOOD_GROUP_OPTIONS
+                    ]}
+                    value={editFormData.bloodGroup || ''}
                     onChange={onInputChange}
                 />
 

@@ -382,6 +382,7 @@ const docToParticipant = (doc: QueryDocumentSnapshot<DocumentData>): Participant
     isPaid: data.isPaid || false,
     dateOfBirth: data.dateOfBirth ?? '',
     email: data.email ?? '',
+    bloodGroup: data.bloodGroup ?? '',
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined,
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined,
   };
@@ -484,6 +485,7 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     'Mobile Number',
     'Date of Birth',
     'Email',
+    'Blood Group',
     'Category',
     'Size',
     'Bib Number',
@@ -500,6 +502,7 @@ export const exportParticipantsToCSV = (participants: Participant[]): string => 
     p.mobileNumber,
     p.dateOfBirth || '',
     p.email || '',
+    p.bloodGroup || '',
     p.category,
     p.size,
     p.bibNumber || '',
