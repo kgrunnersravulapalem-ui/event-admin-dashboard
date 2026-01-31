@@ -75,13 +75,13 @@ const COLORS = {
 };
 
 const TSHIRT_INVENTORY: Record<string, number> = {
-    XS: 80,
-    S: 300,
-    M: 350,
-    L: 300,
-    XL: 100,
-    XXL: 55,
-    XXXL: 15
+   XS: 90,
+   S: 305,
+   M: 490,
+   L: 330,
+   XL: 180,
+   XXL: 85,
+   XXXL: 20
 };
 
 // Custom tooltip to show sum of male and female
