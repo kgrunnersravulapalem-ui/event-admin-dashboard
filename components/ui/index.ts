@@ -24,3 +24,5 @@ export type { DatePickerProps } from './DatePicker';
 
 export { default as Modal } from './Modal';
 export type { ModalProps } from './Modal';
+export { default as Toggle } from './Toggle';
+export type { ToggleProps } from './Toggle';

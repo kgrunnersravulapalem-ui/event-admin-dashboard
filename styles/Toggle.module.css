@@ -1,0 +1,87 @@
+/**
+ * Toggle Component Styles
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  background-color: var(--theme-border-dark);
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--theme-text-primary);
+}
+
+.input:checked + .label .switch {
+  background-color: var(--theme-primary);
+}
+
+.input:checked + .label .switch::after {
+  left: 22px;
+}
+
+.input:focus + .label .switch {
+  box-shadow: 0 0 0 2px var(--theme-bg-primary), 0 0 0 4px var(--theme-primary);
+  outline: none;
+}
+
+.input:disabled + .label {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.description {
+  font-size: 0.75rem;
+  color: var(--theme-text-secondary);
+  margin: 0;
+  margin-left: 60px;
+}

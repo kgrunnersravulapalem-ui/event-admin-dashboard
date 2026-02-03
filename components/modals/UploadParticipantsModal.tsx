@@ -8,7 +8,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Modal, Button, Dropdown } from '@/components/ui';
+import { Modal, Button, Dropdown, Toggle } from '@/components/ui';
 import { Organization } from '@/types';
 import {
   parseCSVFile,
@@ -46,6 +46,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [pastedContent, setPastedContent] = useState('');
   const [inputMode, setInputMode] = useState<InputMode>('file');
+  const [isPaid, setIsPaid] = useState(true);
   const [step, setStep] = useState<UploadStep>('select');
   const [parseResult, setParseResult] = useState<CSVParseResult | null>(null);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
@@ -60,6 +61,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
     setFile(null);
     setPastedContent('');
     setInputMode('file');
+    setIsPaid(true);
     setStep('select');
     setParseResult(null);
     setUploadProgress({ current: 0, total: 0 });
@@ -95,7 +97,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
     try {
       const content = await parseCSVFile(selectedFile);
       console.log('CSV Content:', content); // Debug
-      const result = parseCSVContent(content);
+      const result = parseCSVContent(content, isPaid);
       console.log('Parse Result:', result); // Debug
       setParseResult(result);
 
@@ -124,7 +126,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
     }
 
     try {
-      const result = parseCSVContent(content);
+      const result = parseCSVContent(content, isPaid);
       console.log('Paste Parse Result:', result); // Debug
       setParseResult(result);
 
@@ -194,6 +196,17 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
           value={selectedOrganization}
           onChange={(e) => setSelectedOrganization(e.target.value)}
           placeholder="Select Organization/School"
+        />
+      </div>
+
+      {/* Payment Status Toggle */}
+      <div className={styles.field}>
+        <Toggle
+          id="payment-status"
+          label="Mark as Paid"
+          checked={isPaid}
+          onChange={setIsPaid}
+          description={isPaid ? 'All uploaded participants will be marked as paid' : 'Participants will be marked as unpaid'}
         />
       </div>
 
@@ -388,6 +401,7 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
                   <th>Mobile</th>
                   <th>Category</th>
                   <th>Size</th>
+                  <th>Paid</th>
                 </tr>
               </thead>
               <tbody>
@@ -398,6 +412,11 @@ const UploadParticipantsModal: React.FC<UploadParticipantsModalProps> = ({
                     <td>{row.mobileNumber}</td>
                     <td>{row.category}</td>
                     <td>{row.size || '-'}</td>
+                    <td>
+                      <span className={row.isPaid ? styles.paidStatus : styles.unpaidStatus}>
+                        {row.isPaid ? '✓ Yes' : '✗ No'}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

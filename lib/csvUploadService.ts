@@ -203,8 +203,10 @@ const validateMobileNumber = (value: string): boolean => {
 
 /**
  * Parse and validate CSV content
+ * @param content - CSV content string
+ * @param isPaid - Whether to mark all participants as paid (default: true)
  */
-export const parseCSVContent = (content: string): CSVParseResult => {
+export const parseCSVContent = (content: string, isPaid: boolean = true): CSVParseResult => {
   const lines = content.split(/\r?\n/).filter(line => line.trim());
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -302,6 +304,7 @@ export const parseCSVContent = (content: string): CSVParseResult => {
       mobileNumber: finalMobileNumber,
       category: normalizedCategory,
       size: finalSize,
+      isPaid,
     });
   }
 
