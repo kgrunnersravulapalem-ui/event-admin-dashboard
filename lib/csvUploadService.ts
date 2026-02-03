@@ -202,6 +202,17 @@ const validateMobileNumber = (value: string): boolean => {
 };
 
 /**
+ * Normalize size value - capitalize if lowercase
+ */
+const normalizeSize = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  
+  // Capitalize the size (first letter uppercase, rest as-is)
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+};
+
+/**
  * Parse and validate CSV content
  * @param content - CSV content string
  * @param isPaid - Whether to mark all participants as paid (default: true)
@@ -292,8 +303,8 @@ export const parseCSVContent = (content: string, isPaid: boolean = true): CSVPar
       warnings.push(`Row ${rowNumber}: Invalid or missing category "${category}", defaulting to "5K"`);
     }
 
-    // Size is optional
-    const finalSize = size?.trim() || '';
+    // Normalize size - capitalize if lowercase
+    const finalSize = normalizeSize(size);
     if (!finalSize) {
       warnings.push(`Row ${rowNumber}: Size is empty for "${finalName}"`);
     }
