@@ -202,14 +202,14 @@ const validateMobileNumber = (value: string): boolean => {
 };
 
 /**
- * Normalize size value - capitalize if lowercase
+ * Normalize size value - convert to uppercase
  */
 const normalizeSize = (value: string): string => {
   const trimmed = value.trim();
   if (!trimmed) return '';
   
-  // Capitalize the size (first letter uppercase, rest as-is)
-  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  // Convert size to uppercase
+  return trimmed.toUpperCase();
 };
 
 /**
