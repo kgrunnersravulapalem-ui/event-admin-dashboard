@@ -248,7 +248,7 @@ export default function BibManagementPage() {
 
   const handleEditBib = (participant: Participant) => {
     setEditingId(participant.id || null);
-    setEditBibValue(participant.bibNumber || '');
+    setEditBibValue(participant.bibNumber ? participant.bibNumber : '');
     setDuplicateParticipant(null);
   };
 

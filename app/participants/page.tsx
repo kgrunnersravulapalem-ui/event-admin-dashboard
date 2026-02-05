@@ -396,8 +396,8 @@ export default function ParticipantsPage() {
     if (!editingParticipant?.id) return;
 
     // Check for bib duplicate before saving (only if bib was changed)
-    const bibNumber = editFormData.bibNumber?.trim();
-    const originalBib = editingParticipant.bibNumber?.trim();
+    const bibNumber = editFormData.bibNumber?.trim() || null;
+    const originalBib = editingParticipant.bibNumber?.trim() || null;
     const bibChanged = bibNumber !== originalBib;
 
     if (bibNumber && bibChanged) {
@@ -414,7 +414,7 @@ export default function ParticipantsPage() {
     try {
       await updateParticipant(editingParticipant.id, {
         ...editFormData,
-        bibNumber: bibNumber,
+        bibNumber: bibNumber || '',
       });
       toast.success('Participant updated successfully');
 
@@ -424,7 +424,7 @@ export default function ParticipantsPage() {
           ? {
             ...p,
             ...editFormData,
-            bibNumber: bibNumber,
+            bibNumber: bibNumber || undefined,
             updatedAt: new Date()
           }
           : p

@@ -29,6 +29,7 @@ import {
   writeBatch,
   startAfter,
   limit,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Participant } from '@/types';
@@ -104,14 +105,15 @@ export const updateParticipant = async (
     const oldOrganization = currentData.organization as string;
 
     // Filter out undefined values - Firestore doesn't accept undefined
-    // Only skip empty bibNumber (dateOfBirth and email should save even if empty)
+    // For empty bibNumber, use deleteField() to remove it
     const cleanData: Record<string, any> = {};
     Object.entries(data).forEach(([key, value]) => {
       // Skip undefined values
       if (value === undefined) return;
 
-      // Only skip empty bibNumber (dateOfBirth and email should save even if empty)
+      // For empty bibNumber, use deleteField() to remove the field
       if (key === 'bibNumber' && value === '') {
+        cleanData[key] = deleteField();
         return;
       }
 
@@ -892,11 +894,11 @@ export const updateBibNumber = async (
   bibNumber: string | null
 ): Promise<{ success: boolean; duplicateParticipant?: Participant }> => {
   try {
-    // If clearing bib number, just update
+    // If clearing bib number, delete the field
     if (!bibNumber) {
       const participantDoc = doc(db, COLLECTION_NAME, participantId);
       await updateDoc(participantDoc, {
-        bibNumber: null,
+        bibNumber: deleteField(),
         updatedAt: serverTimestamp(),
       });
       return { success: true };
