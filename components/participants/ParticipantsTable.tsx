@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui';
 import { Participant } from '@/types';
+import BibInput from './BibInput';
 import styles from '@/styles/Participants.module.css';
 
 interface ParticipantsTableProps {
@@ -16,6 +17,7 @@ interface ParticipantsTableProps {
     onBulkToggleStatus: (disable: boolean) => void;
     onBulkToggleSwagKit: (swagKitGiven: boolean) => void;
     onClearSelection: () => void;
+    onSaveBibNumber: (participantId: string, bibNumber: string) => Promise<void>;
     isBulkDeleting: boolean;
     currentPage: number;
     itemsPerPage: number;
@@ -34,6 +36,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
     onBulkToggleStatus,
     onBulkToggleSwagKit,
     onClearSelection,
+    onSaveBibNumber,
     isBulkDeleting,
     currentPage,
     itemsPerPage,
@@ -136,11 +139,12 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                         key={participant.id}
                         className={`${styles.participantCard} ${participant.disabled ? styles.disabledRow : ''}`}
                         onClick={(e) => {
-                            // Don't trigger edit if clicking checkbox, toggle, or action menu
+                            // Don't trigger edit if clicking checkbox, toggle, action menu, or bib input
                             if (
                                 (e.target as Element).closest(`.${styles.checkboxCell}`) ||
                                 (e.target as Element).closest(`.${styles.swagKitCell}`) ||
-                                (e.target as Element).closest(`.${styles.actionsCell}`)
+                                (e.target as Element).closest(`.${styles.actionsCell}`) ||
+                                (e.target as Element).closest(`.${styles.bibInputWrapper}`)
                             ) {
                                 return;
                             }
@@ -171,11 +175,11 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                         </div>
                         <div className={styles.detail}>{participant.size}</div>
                         <div className={styles.bibCell}>
-                            {participant.bibNumber ? (
-                                <span className={styles.bibBadge}>{participant.bibNumber}</span>
-                            ) : (
-                                <span className={styles.noBib}>-</span>
-                            )}
+                            <BibInput
+                                participantId={participant.id!}
+                                currentBibNumber={participant.bibNumber}
+                                onSave={(bibNumber) => onSaveBibNumber(participant.id!, bibNumber)}
+                            />
                         </div>
                         <div className={styles.detail} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <span

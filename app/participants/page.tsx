@@ -441,6 +441,63 @@ export default function ParticipantsPage() {
   };
 
   /**
+   * Handle save bib number from inline input
+   */
+  const handleSaveBibNumber = async (participantId: string, bibNumber: string) => {
+    const participant = participants.find(p => p.id === participantId);
+    if (!participant) return;
+
+    const trimmedBibNumber = bibNumber.trim();
+
+    // Check if bib number has changed
+    if (trimmedBibNumber === participant.bibNumber) {
+      return;
+    }
+
+    // Check for duplicate bib number
+    if (trimmedBibNumber) {
+      try {
+        const duplicate = await checkBibNumberDuplicate(trimmedBibNumber, participantId);
+        setFirestoreReads(prev => prev + 1);
+        if (duplicate) {
+          toast.error(`Bib number already assigned to ${duplicate.name}`);
+          throw new Error('Duplicate bib number');
+        }
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    // Store current state for rollback
+    const previousParticipants = [...participants];
+
+    // Optimistic update
+    setParticipants(prev => prev.map(p =>
+      p.id === participantId
+        ? {
+          ...p,
+          bibNumber: trimmedBibNumber || undefined,
+          updatedAt: new Date()
+        }
+        : p
+    ));
+
+    try {
+      await updateParticipant(participantId, {
+        ...participant,
+        bibNumber: trimmedBibNumber || '',
+      });
+      toast.success('Bib number saved successfully');
+    } catch (error: unknown) {
+      // Rollback on error
+      setParticipants(previousParticipants);
+      const message = error instanceof Error ? error.message : 'Failed to save bib number';
+      toast.error(message);
+      throw error;
+    }
+  };
+
+  /**
    * Handle delete participant (optimistic update)
    */
   const handleDelete = async (id: string, name: string) => {
@@ -828,6 +885,7 @@ export default function ParticipantsPage() {
               onBulkToggleStatus={handleBulkToggleStatus}
               onBulkToggleSwagKit={handleBulkToggleSwagKit}
               onClearSelection={handleClearSelection}
+              onSaveBibNumber={handleSaveBibNumber}
               isBulkDeleting={isBulkDeleting}
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
