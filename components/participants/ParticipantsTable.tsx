@@ -14,6 +14,7 @@ interface ParticipantsTableProps {
     onToggleSwagKit: (participant: Participant) => void;
     onBulkDelete: () => void;
     onBulkToggleStatus: (disable: boolean) => void;
+    onBulkToggleSwagKit: (swagKitGiven: boolean) => void;
     onClearSelection: () => void;
     isBulkDeleting: boolean;
     currentPage: number;
@@ -31,6 +32,7 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
     onToggleSwagKit,
     onBulkDelete,
     onBulkToggleStatus,
+    onBulkToggleSwagKit,
     onClearSelection,
     isBulkDeleting,
     currentPage,
@@ -74,6 +76,20 @@ const ParticipantsTable: React.FC<ParticipantsTableProps> = ({
                         onClick={() => onBulkToggleStatus(false)}
                     >
                         Re-enroll Selected
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="small"
+                        onClick={() => onBulkToggleSwagKit(true)}
+                    >
+                        Mark Swag Kit Given
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="small"
+                        onClick={() => onBulkToggleSwagKit(false)}
+                    >
+                        Mark Swag Kit Not Given
                     </Button>
                     <Button
                         variant="danger"

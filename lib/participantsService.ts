@@ -754,6 +754,42 @@ export const toggleSwagKitStatus = async (
   }
 };
 
+/**
+ * Bulk toggle swag kit status for multiple participants
+ * Updates swagKitGiven field for all specified participants
+ */
+export const bulkToggleSwagKitStatus = async (
+  ids: string[],
+  swagKitGiven: boolean
+): Promise<{ success: number; failed: number }> => {
+  if (ids.length === 0) return { success: 0, failed: 0 };
+
+  try {
+    // Update all documents in batches (Firestore limit is 500 per batch)
+    const BATCH_SIZE = 500;
+
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const batch = writeBatch(db);
+      const batchIds = ids.slice(i, i + BATCH_SIZE);
+
+      batchIds.forEach((id) => {
+        const docRef = doc(db, COLLECTION_NAME, id);
+        batch.update(docRef, {
+          swagKitGiven,
+          updatedAt: serverTimestamp(),
+        });
+      });
+
+      await batch.commit();
+    }
+
+    return { success: ids.length, failed: 0 };
+  } catch (error) {
+    console.error('Bulk toggle swag kit status error:', error);
+    throw new Error('Failed to update swag kit status');
+  }
+};
+
 // ============================================
 // BIB MANAGEMENT FUNCTIONS
 // ============================================

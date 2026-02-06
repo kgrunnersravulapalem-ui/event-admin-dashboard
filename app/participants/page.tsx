@@ -22,6 +22,7 @@ import {
   bulkDeleteParticipants,
   toggleParticipantStatus,
   bulkToggleParticipantStatus,
+  bulkToggleSwagKitStatus,
   toggleSwagKitStatus,
   checkBibNumberDuplicate,
 } from '@/lib/participantsService';
@@ -641,6 +642,46 @@ export default function ParticipantsPage() {
   };
 
   /**
+   * Handle bulk toggle swag kit status
+   */
+  const handleBulkToggleSwagKit = async (swagKitGiven: boolean) => {
+    if (selectedIds.size === 0) return;
+
+    const action = swagKitGiven ? 'given' : 'not given';
+
+    // Store current state for potential rollback
+    const previousParticipants = [...participants];
+    const previousSelectedIds = new Set(selectedIds);
+    const idsToToggle = Array.from(selectedIds);
+
+    // Optimistic update - update UI immediately
+    setParticipants(prev => prev.map(p =>
+      selectedIds.has(p.id || '') ? { ...p, swagKitGiven } : p
+    ));
+    setSelectedIds(new Set());
+
+    try {
+      const result = await bulkToggleSwagKitStatus(idsToToggle, swagKitGiven);
+
+      if (result.success > 0) {
+        toast.success(`Swag kit marked as ${action} for ${result.success} participant(s)`);
+      }
+      if (result.failed > 0) {
+        toast.error(`Failed to update swag kit status for ${result.failed} participant(s)`);
+        // Partial rollback - only rollback failed items
+        // Since we don't know which ones failed, we need to reload
+        loadParticipants();
+        setSelectedIds(new Set());
+      }
+    } catch (error) {
+      // Rollback on error
+      setParticipants(previousParticipants);
+      setSelectedIds(previousSelectedIds);
+      toast.error('Bulk swag kit update failed');
+    }
+  };
+
+  /**
    * Handle export to CSV - fetches all matching participants
    */
   const handleExport = async () => {
@@ -785,6 +826,7 @@ export default function ParticipantsPage() {
               onToggleSwagKit={handleToggleSwagKit}
               onBulkDelete={handleBulkDelete}
               onBulkToggleStatus={handleBulkToggleStatus}
+              onBulkToggleSwagKit={handleBulkToggleSwagKit}
               onClearSelection={handleClearSelection}
               isBulkDeleting={isBulkDeleting}
               currentPage={currentPage}
