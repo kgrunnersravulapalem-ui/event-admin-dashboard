@@ -192,6 +192,34 @@ export default function DashboardPage() {
               </div>
             </Card>
           </Link>
+
+          <Link href="/registration-lookup" className={styles.linkCard}>
+            <Card>
+              <div className={styles.linkContent}>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242m-4.243 4.242L9.88 9.88" />
+                </svg>
+                <div>
+                  <div className={styles.linkTitle}>Registration Lookup</div>
+                  <div className={styles.linkDesc}>Find registration by Order ID</div>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/transaction-search" className={styles.linkCard}>
+            <Card>
+              <div className={styles.linkContent}>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <div>
+                  <div className={styles.linkTitle}>Transaction Search</div>
+                  <div className={styles.linkDesc}>Search PhonePe transactions</div>
+                </div>
+              </div>
+            </Card>
+          </Link>
         </div>
       </div>
     </DashboardLayout>
